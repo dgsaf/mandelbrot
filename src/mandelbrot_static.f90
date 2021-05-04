@@ -32,14 +32,6 @@ program mandelbrot_static
   chunksize = ceiling(real(N*N) / real(n_proc))
 
   ! Determine loop bounds and chunk size for each process.
-  ! If N isn't divisible by n_proc, then a few of the last processes will have
-  ! chunk sizes smaller than chunksize, e.g. for N = 4, n_proc = 3; we will
-  ! have:
-  !   N * N = 16
-  !   chunksize = 6
-  !   loop_min = [0,  6, 12]
-  !   loop_max = [5, 11, 15]
-  !   chunksize_proc = [6, 6, 4]
   allocate(loop_min(0:n_proc-1))
   allocate(loop_max(0:n_proc-1))
   allocate(chunksize_proc(0:n_proc-1))
@@ -49,10 +41,6 @@ program mandelbrot_static
     loop_max(p) = min(N*N-1, chunksize * (p + 1) - 1)
     chunksize_proc(p) = loop_max(p) - loop_min(p) + 1
   end do
-
-  write (*, *) &
-      "process (", proc_id, " / ", n_proc, ") has bounds (", &
-      loop_min(proc_id), " , ", loop_max(proc_id), ")"
 
   ! Allocate work array for given process.
   allocate(x_proc(0:chunksize_proc(proc_id)-1))
@@ -114,7 +102,9 @@ program mandelbrot_static
       "  setup:         ", time_setup, NEW_LINE('a'), &
       "  computation:   ", time_comp, NEW_LINE('a'), &
       "  waiting:       ", time_wait, NEW_LINE('a'), &
-      "  communicating: ", time_comm
+      "  communicating: ", time_comm, NEW_LINE('a'), &
+      "  total: ", time_setup+time_comp+time_wait+time_comm
+
 
   ! Writing data to file (only for root process).
   if (proc_id == 0) then
