@@ -17,13 +17,13 @@ program mandelbrot_static
   integer :: p
 
   ! MPI timing variables.
-  double precision :: time_1, time_2
+  double precision :: times(1:7)
   double precision :: time_setup, time_comp, time_wait, time_comm
 
   ! MPI initialisation.
   call MPI_INIT(err)
 
-  time_1 = MPI_WTIME()
+  times(1) = MPI_WTIME()
 
   call MPI_COMM_RANK(MPI_COMM_WORLD, proc_id, err)
   call MPI_COMM_SIZE(MPI_COMM_WORLD, n_proc, err)
@@ -45,15 +45,11 @@ program mandelbrot_static
   ! Allocate work array for given process.
   allocate(x_proc(0:chunksize_proc(proc_id)-1))
 
-  time_2 = MPI_WTIME()
-
-  time_setup = time_2 - time_1
+  times(2) = MPI_WTIME()
 
   ! Mandelbrot calculation.
   ! Modified to loop only over a certain subset of indexes (due to utilising
   ! static decomposition).
-  time_1 = MPI_WTIME()
-
   do loop = loop_min(proc_id), loop_max(proc_id)
     ! i varies from 0 to N-1
     i = int(loop/N)
@@ -74,28 +70,24 @@ program mandelbrot_static
     x_proc(loop-loop_min(proc_id)) = log(real(k))/log(real(maxiter))
   end do
 
-  time_2 = MPI_WTIME()
-
-  time_comp = time_2 - time_1
+  times(3) = MPI_WTIME()
 
   ! MPI wait for all process to finish
-  time_1 = MPI_WTIME()
-
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
-  time_2 = MPI_WTIME()
-
-  time_wait = time_2 - time_1
+  times(4) = MPI_WTIME()
 
   ! MPI gather the work array from each process to the root process.
-  time_1 = MPI_WTIME()
-
   call MPI_GATHERV(x_proc, chunksize_proc(proc_id), MPI_REAL, x, &
       chunksize_proc, loop_min, MPI_REAL, 0, MPI_COMM_WORLD, err)
 
-  time_2 = MPI_WTIME()
+  times(5) = MPI_WTIME()
 
-  time_comm = time_2 - time_1
+  ! Timing analysis.
+  time_setup = times(2) - times(1)
+  time_comp = times(3) - times(2)
+  time_wait = times(4) - times(3)
+  time_comm = times(5) - times(4)
 
   write (*, *) &
       "timing for process: ", proc_id, NEW_LINE('a'), &
@@ -103,7 +95,7 @@ program mandelbrot_static
       "  computation:   ", time_comp, NEW_LINE('a'), &
       "  waiting:       ", time_wait, NEW_LINE('a'), &
       "  communicating: ", time_comm, NEW_LINE('a'), &
-      "  total: ", time_setup+time_comp+time_wait+time_comm
+      "  total: ", times(5) - times(1)
 
 
   ! Writing data to file (only for root process).
