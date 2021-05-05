@@ -18,7 +18,7 @@ program mandelbrot_static
 
   ! MPI timing variables.
   double precision :: times(1:7)
-  double precision :: time_setup, time_comp, time_wait, time_comm
+  double precision :: time_setup, time_comp, time_wait, time_comm, time_total
 
   ! MPI initialisation.
   call MPI_INIT(err)
@@ -88,15 +88,22 @@ program mandelbrot_static
   time_comp = times(3) - times(2)
   time_wait = times(4) - times(3)
   time_comm = times(5) - times(4)
+  time_total = times(5) - times(1)
 
-  write (*, *) &
-      "timing for process: ", proc_id, NEW_LINE('a'), &
-      "  setup:         ", time_setup, NEW_LINE('a'), &
-      "  computation:   ", time_comp, NEW_LINE('a'), &
-      "  waiting:       ", time_wait, NEW_LINE('a'), &
-      "  communicating: ", time_comm, NEW_LINE('a'), &
-      "  total: ", times(5) - times(1)
+  write (*, '(a, 2i, a, f8.5, a, f8.5, a, f8.5, a, f8.5, a)') &
+      "timing for process: ", proc_id, " (", &
+      100d0*time_setup/time_total, " %, ", &
+      100d0*time_comp/time_total, " %, ", &
+      100d0*time_wait/time_total, " %, ", &
+      100d0*time_comm/time_total, " %)"
 
+  ! write (*, *) &
+  !     "timing for process: ", proc_id, NEW_LINE('a'), &
+  !     "  setup:         ", time_setup, NEW_LINE('a'), &
+  !     "  computation:   ", time_comp, NEW_LINE('a'), &
+  !     "  waiting:       ", time_wait, NEW_LINE('a'), &
+  !     "  communicating: ", time_comm, NEW_LINE('a'), &
+  !     "  total: ", time_total
 
   ! Writing data to file (only for root process).
   if (proc_id == 0) then
