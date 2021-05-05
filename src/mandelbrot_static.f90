@@ -90,25 +90,20 @@ program mandelbrot_static
   time_comm = times(5) - times(4)
   time_total = times(5) - times(1)
 
-  write (*, '(a, i3, a, f8.5, a, f8.5, a, f8.5, a, f8.5, a)') &
-      "timing for process: ", proc_id, " (", &
-      100d0*time_setup/time_total, " %, ", &
-      100d0*time_comp/time_total, " %, ", &
-      100d0*time_wait/time_total, " %, ", &
-      100d0*time_comm/time_total, " %)"
+  write (*, *) &
+      "timing for process: ", proc_id, NEW_LINE('a'), &
+      "  setup:         ", time_setup, NEW_LINE('a'), &
+      "  computation:   ", time_comp, NEW_LINE('a'), &
+      "  waiting:       ", time_wait, NEW_LINE('a'), &
+      "  communicating: ", time_comm, NEW_LINE('a'), &
+      "  total: ", time_total, NEW_LINE('a')
 
-  ! write (*, *) &
-  !     "timing for process: ", proc_id, NEW_LINE('a'), &
-  !     "  setup:         ", time_setup, NEW_LINE('a'), &
-  !     "  computation:   ", time_comp, NEW_LINE('a'), &
-  !     "  waiting:       ", time_wait, NEW_LINE('a'), &
-  !     "  communicating: ", time_comm, NEW_LINE('a'), &
-  !     "  total: ", time_total
+  call MPI_BARRIER(MPI_COMM_WORLD, err)
 
   ! Writing data to file (only for root process).
   if (proc_id == 0) then
 
-    write(*, *) "Writing mandelbrot_static.ppm"
+    write (*, *) "Writing mandelbrot_static.ppm"
 
     open(7, file="mandelbrot_static.ppm", status="unknown")
 
