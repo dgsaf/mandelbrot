@@ -92,7 +92,7 @@ program mandelbrot_master_worker
     loop_max(task) = min(N*N-1, chunksize * task - 1)
 
     write (*, *) "task", task, "has bounds (", &
-        lower_bound(task), " , ", upper_bound(task), ")"
+        loop_min(task), " , ", loop_max(task), ")"
   end do
 
   ! Temporary solution to n_tasks < n_proc. Will be fixed.
@@ -374,7 +374,7 @@ contains
         z = z*z + kappa
       end do
 
-      x_proc(loop-lower_bound) = log(real(k))/log(real(maxiter))
+      x(loop-lower_bound) = log(real(k))/log(real(maxiter))
     end do
   end subroutine mandelbrot_calculation
 
