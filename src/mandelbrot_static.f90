@@ -90,7 +90,7 @@ program mandelbrot_static
   time_comm = times(5) - times(4)
   time_total = times(5) - times(1)
 
-  write (*, '(a, 2i, a, f8.5, a, f8.5, a, f8.5, a, f8.5, a)') &
+  write (*, '(a, i3, a, f8.5, a, f8.5, a, f8.5, a, f8.5, a)') &
       "timing for process: ", proc_id, " (", &
       100d0*time_setup/time_total, " %, ", &
       100d0*time_comp/time_total, " %, ", &
