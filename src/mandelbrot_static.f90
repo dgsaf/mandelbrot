@@ -119,7 +119,7 @@ program mandelbrot_static
       z = z*z + kappa
     end do
 
-    ! x_proc is indexed to ensure all x_proc(0:chunksize_proc(proc_id)) are
+    ! x_proc is indexed to ensure all x_proc(0:chunksize_proc(proc_id)-1) are
     ! determined.
     x_proc(loop-loop_min(proc_id)) = log(real(k))/log(real(maxiter))
   end do
