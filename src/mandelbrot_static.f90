@@ -51,12 +51,12 @@ program mandelbrot_static
   !!  x_proc          A work array, local to each process, which will yield the
   !!                  mandelbrot data for the data subset assigned to this
   !!                  process. Will have size chunksize_proc(proc_id).
-  !!  p               A counter variable for looping over processes.
+  !!  proc            A counter variable for looping over processes.
   integer :: proc_id, n_proc, err
   integer :: chunksize
   integer , allocatable :: loop_min(:), loop_max(:), chunksize_proc(:)
   real , allocatable :: x_proc(:)
-  integer :: p
+  integer :: proc
 
   ! Timing variables.
   !!  times       An array storing time markers used to determine the following
@@ -94,10 +94,10 @@ program mandelbrot_static
   allocate(loop_max(0:n_proc-1))
   allocate(chunksize_proc(0:n_proc-1))
 
-  do p = 0, n_proc - 1
-    loop_min(p) = max(0, chunksize * p)
-    loop_max(p) = min(N*N-1, chunksize * (p + 1) - 1)
-    chunksize_proc(p) = loop_max(p) - loop_min(p) + 1
+  do proc = 0, n_proc - 1
+    loop_min(proc) = max(0, chunksize * proc)
+    loop_max(proc) = min(N*N-1, chunksize * (proc + 1) - 1)
+    chunksize_proc(proc) = loop_max(proc) - loop_min(proc) + 1
   end do
 
   ! Allocate work array for given process.
