@@ -90,6 +90,9 @@ program mandelbrot_master_worker
   do task = 1, n_tasks
     loop_min(task) = max(0, chunksize * (task - 1))
     loop_max(task) = min(N*N-1, chunksize * task - 1)
+
+    write (*, *) "task", task, "has bounds (", &
+        lower_bound(task), " , ", upper_bound(task), ")"
   end do
 
   ! Temporary solution to n_tasks < n_proc. Will be fixed.
@@ -124,6 +127,8 @@ program mandelbrot_master_worker
       call MPI_ISEND(task, 1, MPI_INTEGER, proc, tag, MPI_COMM_WORLD, request, &
           err)
 
+      write (*, '(a, i3, a, i10)') "master -> ", proc, " : task", task
+
       task_ledger(proc) = task
       task = task + 1
     end do
@@ -144,6 +149,8 @@ program mandelbrot_master_worker
       proc_recv = status(MPI_SOURCE)
       task_recv = task_ledger(proc_recv)
 
+      write (*, '(a, i3, a, i10)') "master <- ", proc_recv, " : task", task_recv
+
       x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
 
       times(6) = MPI_WTIME()
@@ -155,6 +162,8 @@ program mandelbrot_master_worker
       ! Distribute new task.
       call MPI_ISEND(task, 1, MPI_INTEGER, proc_recv, tag, MPI_COMM_WORLD, &
           request, err)
+
+      write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : task", task
 
       task_ledger(proc_recv) = task
       task = task + 1
@@ -181,6 +190,8 @@ program mandelbrot_master_worker
       proc_recv = status(MPI_SOURCE)
       task_recv = task_ledger(proc_recv)
 
+      write (*, '(a, i3, a, i10)') "master <- ", proc_recv, " : task", task_recv
+
       x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
 
       times(6) = MPI_WTIME()
@@ -188,6 +199,8 @@ program mandelbrot_master_worker
       ! Tell worker there is no more work to do.
       call MPI_ISEND(all_tasks_distributed, 1, MPI_LOGICAL, proc_recv, tag, &
           MPI_COMM_WORLD, request, err)
+
+      write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : no more tasks"
 
       ! No more work to distribute.
       task_ledger(proc_recv) = no_task
@@ -219,6 +232,8 @@ program mandelbrot_master_worker
       call MPI_RECV(task, 1, MPI_INTEGER, master_id, tag, MPI_COMM_WORLD, &
           status, err)
 
+      write (*, '(i3, a, i10)') proc_id, " received task", task
+
       times(4) = MPI_WTIME()
 
       ! Complete task.
@@ -232,9 +247,14 @@ program mandelbrot_master_worker
       call MPI_SEND(x_task, chunksize, MPI_REAL, master_id, tag, &
           MPI_COMM_WORLD, err)
 
+      write (*, '(i3, a, i10)') proc_id, " returning task", task
+
       ! Receive direction if there are/aren't more tasks to perform
       call MPI_RECV(all_tasks_distributed, 1, MPI_LOGICAL, master_id, tag, &
           MPI_COMM_WORLD, status, err)
+
+      write (*, '(i3, a)') proc_id, " understands no more tasks"
+
 
       times(6) = MPI_WTIME()
 
