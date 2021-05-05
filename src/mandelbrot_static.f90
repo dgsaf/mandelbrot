@@ -96,7 +96,7 @@ program mandelbrot_static
       "  computation:   ", time_comp, NEW_LINE('a'), &
       "  waiting:       ", time_wait, NEW_LINE('a'), &
       "  communicating: ", time_comm, NEW_LINE('a'), &
-      "  total: ", time_total, NEW_LINE('a')
+      "  total:         ", time_total
 
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
