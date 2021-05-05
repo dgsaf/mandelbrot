@@ -58,7 +58,7 @@ program mandelbrot_static
   real , allocatable :: x_proc(:)
   integer :: p
 
-  ! MPI timing variables.
+  ! Timing variables.
   !!  times       An array storing time markers used to determine the following
   !!              timing variables.
   !!  time_setup  Time taken for this process to setup MPI variables for
@@ -189,8 +189,7 @@ program mandelbrot_static
 
 contains
 
-  ! read_input
-  ! Read in the value of N.
+  ! Read in the value of N, maxiter from command line arguments
   subroutine read_input (N, maxiter)
     integer , intent(out) :: N, maxiter
     integer :: num_args

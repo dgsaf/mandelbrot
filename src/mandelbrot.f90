@@ -7,6 +7,15 @@ program mandelbrot
   integer , parameter :: maxiter = 1000
   real :: x(0:N*N-1)
 
+  ! Timing variables.
+  !!  times       An array storing time markers used to determine the following
+  !!              timing variables.
+  !!  time_total  Time taken overall.
+  double precision :: times(1:2)
+  double precision :: time_total
+
+  call cpu_time(times(1))
+
   ! mandelbrot calculation
   do loop = 0, N*N-1
     ! i varies from 0 to N-1
@@ -25,6 +34,15 @@ program mandelbrot
 
     x(loop) = log(real(k))/log(real(maxiter))
   end do
+
+  call cpu_time(times(2))
+
+  ! Timing analysis.
+  time_total = times(2) - times(1)
+
+  write (*, *) &
+      "timing for serial code:", NEW_LINE('a'), &
+      "  total: ", time_total
 
   ! writing data to file
   write(*, *) "Writing mandelbrot.ppm"
