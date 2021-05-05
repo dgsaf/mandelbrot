@@ -120,15 +120,28 @@ program mandelbrot_master_worker
     task = 1
 
     ! Distribute initial tasks.
-    do proc = 1, min(n_proc - 1, n_tasks)
-      call MPI_ISEND(task, 1, MPI_INTEGER, proc, tag, MPI_COMM_WORLD, request, &
-          err)
+    do proc = 1, n_proc - 1
 
-      !debugging
-      write (*, '(a, i3, a, i10)') "master -> ", proc, " : task", task
+      all_tasks_distributed = (task > n_tasks)
 
-      task_ledger(proc) = task
-      task = task + 1
+      call MPI_ISEND(all_tasks_distributed, 1, MPI_LOGICAL, proc, tag, &
+          MPI_COMM_WORLD, request, err)
+
+      if (all_tasks_distributed) then
+        !debugging
+        write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : no more tasks"
+
+        task_ledger(proc) = no_task
+      else
+        call MPI_ISEND(task, 1, MPI_INTEGER, proc, tag, MPI_COMM_WORLD, &
+            request, err)
+
+        !debugging
+        write (*, '(a, i3, a, i10)') "master -> ", proc, " : task", task
+
+        task_ledger(proc) = task
+        task = task + 1
+      end if
 
       !debugging
       write (*, *) task_ledger(:)
@@ -138,7 +151,7 @@ program mandelbrot_master_worker
     time_comm = time_comm + times(3) - times(2)
 
     ! Loop until all tasks distributed.
-    do while (task <= n_tasks)
+    do while (.not. all_tasks_distributed)
       times(4) = MPI_WTIME()
 
       ! Receive completed task from worker.
@@ -171,6 +184,8 @@ program mandelbrot_master_worker
       task_ledger(proc_recv) = task
       task = task + 1
 
+      all_tasks_distributed = (task > n_tasks)
+
       !debugging
       write (*, *) task_ledger(:)
 
@@ -180,8 +195,6 @@ program mandelbrot_master_worker
       time_comp = time_comp + times(6) - times(5)
       time_comm = time_comm + times(7) - times(6)
     end do
-
-    all_tasks_distributed = .true.
 
     ! Collect outstanding tasks.
     do while (any(task_ledger /= no_task))
@@ -234,6 +247,10 @@ program mandelbrot_master_worker
     times(2) = MPI_WTIME()
     time_setup = times(2) - times(1)
 
+    ! Receive direction if there are/aren't more tasks to perform.
+    call MPI_RECV(all_tasks_distributed, 1, MPI_LOGICAL, master_id, tag, &
+        MPI_COMM_WORLD, status, err)
+
     ! Work until no more tasks to be distributed.
     do while (.not. all_tasks_distributed)
 
@@ -256,7 +273,7 @@ program mandelbrot_master_worker
       call MPI_SEND(x_task, chunksize, MPI_REAL, master_id, tag, &
           MPI_COMM_WORLD, err)
 
-      ! Receive direction if there are/aren't more tasks to perform
+      ! Receive direction if there are/aren't more tasks to perform.
       call MPI_RECV(all_tasks_distributed, 1, MPI_LOGICAL, master_id, tag, &
           MPI_COMM_WORLD, status, err)
 
