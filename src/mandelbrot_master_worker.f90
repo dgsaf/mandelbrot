@@ -98,13 +98,6 @@ program mandelbrot_master_worker
     end if
   end do
 
-  !debugging
-  ! Temporary solution to n_tasks < n_proc. Will be fixed.
-  if (n_tasks < n_proc) then
-    write (*, *) "Insufficient number of tasks."
-    call exit()
-  end if
-
   ! Default value for flag indicating all tasks have been handed out
   all_tasks_distributed = .false.
 
@@ -127,7 +120,7 @@ program mandelbrot_master_worker
     task = 1
 
     ! Distribute initial tasks.
-    do proc = 1, n_proc - 1
+    do proc = 1, min(n_proc - 1, n_tasks)
       call MPI_ISEND(task, 1, MPI_INTEGER, proc, tag, MPI_COMM_WORLD, request, &
           err)
 
@@ -250,9 +243,6 @@ program mandelbrot_master_worker
       call MPI_RECV(task, 1, MPI_INTEGER, master_id, tag, MPI_COMM_WORLD, &
           status, err)
 
-      !debugging
-      ! write (*, '(i3, a, i10)') proc_id, " received task", task
-
       times(4) = MPI_WTIME()
 
       ! Complete task.
@@ -266,9 +256,6 @@ program mandelbrot_master_worker
       call MPI_SEND(x_task, chunksize, MPI_REAL, master_id, tag, &
           MPI_COMM_WORLD, err)
 
-      !debugging
-      ! write (*, '(i3, a, i10)') proc_id, " returning task", task
-
       ! Receive direction if there are/aren't more tasks to perform
       call MPI_RECV(all_tasks_distributed, 1, MPI_LOGICAL, master_id, tag, &
           MPI_COMM_WORLD, status, err)
@@ -279,9 +266,6 @@ program mandelbrot_master_worker
       time_comp = time_comp + times(5) - times(4)
       time_comm = time_comm + times(6) - times(5)
     end do
-
-    !debugging
-    ! write (*, '(i3, a)') proc_id, " finished"
 
     times(7) = MPI_WTIME()
 
