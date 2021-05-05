@@ -122,8 +122,6 @@ program mandelbrot_master_worker
     ! Distribute initial tasks.
     do proc = 1, n_proc - 1
 
-      all_tasks_distributed = (task > n_tasks)
-
       call MPI_ISEND(all_tasks_distributed, 1, MPI_LOGICAL, proc, tag, &
           MPI_COMM_WORLD, request, err)
 
@@ -142,6 +140,8 @@ program mandelbrot_master_worker
         task_ledger(proc) = task
         task = task + 1
       end if
+
+      all_tasks_distributed = (task > n_tasks)
 
       !debugging
       write (*, *) task_ledger(:)
