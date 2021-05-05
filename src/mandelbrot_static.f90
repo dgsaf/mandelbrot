@@ -30,9 +30,8 @@ program mandelbrot_static
   complex :: z, kappa
   integer :: green, blue, i, j, k, loop
 
-  integer , parameter :: N = 2000
-  integer , parameter :: maxiter = 1000
-  real :: x(0:N*N-1)
+  integer :: N, maxiter
+  real , allocatable :: x(:)
 
   ! MPI variables.
   !!  proc_id         ID of current MPI process.
@@ -73,6 +72,11 @@ program mandelbrot_static
   !!  time_total  Time taken overall.
   double precision :: times(1:5)
   double precision :: time_setup, time_comp, time_wait, time_comm, time_total
+
+  ! Read command line arguments.
+  call read_input(N, maxiter)
+
+  allocate(x(0:N*N-1))
 
   ! MPI initialisation.
   call MPI_INIT(err)
@@ -178,8 +182,43 @@ program mandelbrot_static
 
   end if
 
-  ! mpi finalisation
+  ! MPI finalisation.
   call MPI_FINALIZE(err)
 
   close(7)
+
+contains
+
+  ! read_input
+  ! Read in the value of N.
+  subroutine read_input (N, maxiter)
+    integer , intent(out) :: N, maxiter
+    integer :: num_args
+    character(len=20) :: arg
+
+    num_args = command_argument_count()
+
+    if (num_args < 2) then
+      write (*, *) "Usage: <N> <maxiter>"
+    end if
+
+    if (num_args >= 1) then
+      call get_command_argument(1, arg)
+      read (arg, *) N
+    else
+      write (*, *) "<N> not specified. Using default value, N = 2000."
+      N = 2000
+    end if
+
+    if (num_args >= 2) then
+      call get_command_argument(2, arg)
+      read (arg, *) maxiter
+    else
+      write (*, *) &
+          "<maxiter> not specified. Using default value, maxiter = 1000."
+      maxiter = 1000
+    end if
+
+  end subroutine read_input
+
 end program mandelbrot_static
