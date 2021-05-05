@@ -60,6 +60,17 @@ program mandelbrot_static
   integer :: p
 
   ! MPI timing variables.
+  !!  times       An array storing time markers used to determine the following
+  !!              timing variables.
+  !!  time_setup  Time taken for this process to setup MPI variables for
+  !!              partitioning data.
+  !!  time_comp   Time taken for this process to perform mandelbrot calculations
+  !!              for its given data subset.
+  !!  time_wait   Time this process spends waiting while other processes finish
+  !               performing their calculations.
+  !!  time_comm   Time taken for this process to communicate its data subset
+  !!              to the root process.
+  !!  time_total  Time taken overall.
   double precision :: times(1:5)
   double precision :: time_setup, time_comp, time_wait, time_comm, time_total
 
