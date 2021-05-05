@@ -1,3 +1,28 @@
+!> mandelbrot_static
+!!
+!!  Adaption of mandelbrot program to use MPI with a static decomposition of the
+!!  data.
+!!
+!!  For a NxN grid (represented in a 1D array; that is, {0, .., N*N - 1}),
+!!  with n_proc processes.
+!!
+!!  The default chunksize, the size of the data subset to be assigned to each
+!!  process, is defined to be the smallest integer such that
+!!  > chunksize * n_proc >= N*N.
+!!  This is so that even in the case where n_proc doesn't divide N*N, every
+!!  data point is guaranteed to be covered by a process.
+!!
+!!  Each process, p, is assigned a section of the data
+!!  {loop_min(p), .., loop_max(p)} such that
+!!  > loop_min(0) = 0
+!!  > loop_max(p) = loop_min(p+1) - 1, for p = 0, .., n_proc - 1
+!!  > loop_max(n_proc-1) = N*N - 1.
+!!  To ensure this, we select
+!!  > loop_min(p) = max(0, chunksize * p)
+!!  > loop_max(p) = min(N*N-1, chunksize * (p + 1) - 1)
+!!  We then define a process indexed chunksize array,
+!!  > chunksize_proc(p) = loop_max(p) - loop_min(p) + 1
+!!  whence, if n_proc divides N*N, we will have chunksize_proc(p) = chunksize.
 program mandelbrot_static
 
   use mpi
@@ -10,6 +35,24 @@ program mandelbrot_static
   real :: x(0:N*N-1)
 
   ! MPI variables.
+  !!  proc_id         ID of current MPI process.
+  !!  n_proc          Number of MPI processes.
+  !!  err             Stores error code for MPI calls.
+  !!  chunksize       The default chunksize; the maximum possible number of loop
+  !!                  iterations assigned to each process. Defined to be the
+  !!                  smallest integer such that
+  !!                  that chunksize * n_proc >= N*N.
+  !!  loop_min        An array of the lower loop-iteration bound for each
+  !!                  process.
+  !!  loop_max        An array of the upper loop-iteration bound for each
+  !!                  process.
+  !!  chunksize_proc  An array storing the size of the data subset for each
+  !!                  process. If n_proc divides N*N, then each element will
+  !!                  simply be equal to chunksize.
+  !!  x_proc          A work array, local to each process, which will yield the
+  !!                  mandelbrot data for the data subset assigned to this
+  !!                  process. Will have size chunksize_proc(proc_id).
+  !!  p               A counter variable for looping over processes.
   integer :: proc_id, n_proc, err
   integer :: chunksize
   integer , allocatable :: loop_min(:), loop_max(:), chunksize_proc(:)
@@ -17,7 +60,7 @@ program mandelbrot_static
   integer :: p
 
   ! MPI timing variables.
-  double precision :: times(1:7)
+  double precision :: times(1:5)
   double precision :: time_setup, time_comp, time_wait, time_comm, time_total
 
   ! MPI initialisation.
@@ -72,7 +115,7 @@ program mandelbrot_static
 
   times(3) = MPI_WTIME()
 
-  ! MPI wait for all process to finish
+  ! MPI wait for all process to finish.
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
   times(4) = MPI_WTIME()
@@ -100,7 +143,7 @@ program mandelbrot_static
 
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
-  ! Writing data to file (only for root process).
+  ! Writing data to file (only done by root process).
   if (proc_id == 0) then
 
     write (*, *) "Writing mandelbrot_static.ppm"
