@@ -3,9 +3,8 @@ program mandelbrot
   complex :: z, kappa
   integer :: green, blue, i, j, k, loop
 
-  integer , parameter :: N = 2000
-  integer , parameter :: maxiter = 1000
-  real :: x(0:N*N-1)
+  integer :: N, maxiter
+  real , allocatable :: x(:)
 
   ! Timing variables.
   !!  times       An array storing time markers used to determine the following
@@ -13,6 +12,11 @@ program mandelbrot
   !!  time_total  Time taken overall.
   double precision :: times(1:2)
   double precision :: time_total
+
+  ! Read command line arguments.
+  call read_input(N, maxiter)
+
+  allocate(x(0:N*N-1))
 
   call cpu_time(times(1))
 
@@ -65,4 +69,39 @@ program mandelbrot
 110 format(I3, /, I3, /, I3)
 
   close(7)
+
+
+contains
+
+  ! Read in the value of N, maxiter from command line arguments
+  subroutine read_input (N, maxiter)
+    integer , intent(out) :: N, maxiter
+    integer :: num_args
+    character(len=20) :: arg
+
+    num_args = command_argument_count()
+
+    if (num_args < 2) then
+      write (*, *) "Usage: <N> <maxiter>"
+    end if
+
+    if (num_args >= 1) then
+      call get_command_argument(1, arg)
+      read (arg, *) N
+    else
+      write (*, *) "<N> not specified. Using default value, N = 2000."
+      N = 2000
+    end if
+
+    if (num_args >= 2) then
+      call get_command_argument(2, arg)
+      read (arg, *) maxiter
+    else
+      write (*, *) &
+          "<maxiter> not specified. Using default value, maxiter = 1000."
+      maxiter = 1000
+    end if
+
+  end subroutine read_input
+
 end program mandelbrot
