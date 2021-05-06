@@ -168,15 +168,6 @@ program mandelbrot_static
   call write_timing_data (N, maxiter, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
 
-  ! write (*, *) proc_id, time_setup, time_comp, time_wait, time_comm, time_total
-  ! write (*, *) &
-  !     "timing for process: ", proc_id, NEW_LINE('a'), &
-  !     "  setup:         ", time_setup, NEW_LINE('a'), &
-  !     "  computation:   ", time_comp, NEW_LINE('a'), &
-  !     "  waiting:       ", time_wait, NEW_LINE('a'), &
-  !     "  communicating: ", time_comm, NEW_LINE('a'), &
-  !     "  total:         ", time_total
-
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
 !   ! Writing data to file (only done by root process).

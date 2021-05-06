@@ -18,13 +18,16 @@ mpifort src/mandelbrot_master_worker.f90 -o bin/mandelbrot_master_worker
 
 # mandelbrot basic
 # srun -n 1 bin/mandelbrot ${N} ${maxiter}
+echo
 
 # mandelbrot static decomposition
 srun -n 10 bin/mandelbrot_static ${N} ${maxiter}
+echo
 
 # mandelbrot master-worker
 for chunksize in ${chunksizes} ; do
     srun -n 10 bin/mandelbrot_master_worker ${N} ${maxiter} ${chunksize}
+    echo
 done
 
 # mandelbrot cyclic decomposition
