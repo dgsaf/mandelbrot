@@ -400,6 +400,7 @@ contains
     character(len=1000) :: timing_file
     character(len=20) :: str_N, str_maxiter, str_n_proc, str_proc_id
     integer :: file_unit
+    logical :: file_exists
 
     ! Construct timing filename to be of the form:
     ! "../output/timing-master_worker-N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
@@ -421,7 +422,13 @@ contains
 
     write (*, *) timing_file
 
-    open (file_unit, file=timing_file, access="append")
+    inquire(file=timing_file, exist=file_exists)
+
+    if (file_exists) then
+      open (file_unit, file=timing_file, access="append")
+    else
+      open (file_unit, file=timing_file, access="write")
+    end if
 
     write (file_unit, *) chunksize, time_setup, time_comp, time_wait, &
         time_comm, time_total
