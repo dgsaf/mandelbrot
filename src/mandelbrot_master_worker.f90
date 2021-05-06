@@ -356,6 +356,13 @@ program mandelbrot_master_worker
 
   end if
 
+  ! Deallocate
+  deallocate(loop_min)
+  deallocate(loop_max)
+  deallocate(task_ledger)
+  deallocate(x_task)
+  deallocate(x)
+
   ! MPI finalisation.
   call MPI_FINALIZE(err)
 

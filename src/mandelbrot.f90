@@ -70,6 +70,9 @@ program mandelbrot
 
   close(7)
 
+  ! Deallocate
+  deallocate(x)
+
 contains
 
   ! Read in the value of N, maxiter from command line arguments

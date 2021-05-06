@@ -194,6 +194,13 @@ program mandelbrot_static
 
   end if
 
+  ! Deallocate
+  deallocate(loop_min)
+  deallocate(loop_max)
+  deallocate(chunksize_proc)
+  deallocate(x_proc)
+  deallocate(x)
+
   ! MPI finalisation.
   call MPI_FINALIZE(err)
 

@@ -192,6 +192,11 @@ program mandelbrot_cyclic
 
   end if
 
+  ! Deallocate
+  deallocate(x_proc)
+  deallocate(x_cyclic)
+  deallocate(x)
+
   ! MPI finalisation.
   call MPI_FINALIZE(err)
 
