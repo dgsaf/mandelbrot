@@ -85,7 +85,7 @@ program mandelbrot_master_worker
   integer :: chunksize, n_tasks
   integer , allocatable :: loop_min(:), loop_max(:)
   real , allocatable :: x_task(:)
-  integer :: proc, task, loop
+  integer :: proc, task
   integer :: proc_recv, task_recv
   logical :: all_tasks_distributed
   integer , allocatable :: task_ledger(:)
