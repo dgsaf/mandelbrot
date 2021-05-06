@@ -55,7 +55,7 @@ program mandelbrot_master_worker
   !!  time_comm   Time taken for this process to communicate its data subset
   !!              to the root process.
   !!  time_total  Time taken overall.
-  double precision :: times(1:7)
+  double precision :: times(1:8)
   double precision :: time_setup, time_comp, time_wait, time_comm, time_total
 
   ! Read command line arguments.
@@ -405,22 +405,22 @@ contains
     ! .proc_id=<proc_id>.dat"
     write (timing_file, *) "../output/timing-master_worker-"
 
-    read (str, *) N
+    write (str, *) N
     write (timing_file, *) timing_file, "N=", trim(adjustl(str)), "."
 
-    read (str, *) maxiter
+    write (str, *) maxiter
     write (timing_file, *) timing_file, "maxiter=", trim(adjustl(str)), "."
 
-    read (str, *) n_proc
+    write (str, *) n_proc
     write (timing_file, *) timing_file, "n_proc=", trim(adjustl(str)), "."
 
-    read (str, *) proc_id
+    write (str, *) proc_id
     write (timing_file, *) timing_file, "proc_id=", trim(adjustl(str)), ".dat"
 
     ! Append the chunksize and timing data to the data file
     file_unit = 10 + proc_id
 
-    open (file_unit, file=timing_file, status="append")
+    open (file_unit, file=timing_file, access="append")
 
     write (file_unit, *) chunksize, time_setup, time_comp, time_wait, time_comm, &
         time_total
