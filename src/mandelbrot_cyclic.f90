@@ -44,15 +44,14 @@ program mandelbrot_cyclic
   !  x_proc          A work array, local to each process, which will yield the
   !                  mandelbrot data for the data subset assigned to this
   !                  process. Will have size chunksize.
-  !  x_proc_trans    A work array, local to each process, which will yield the
-  !                  mandelbrot data after transposing the cyclic data. This
-  !                  allows the use of MPI_gather without messy code.
+  !  x_cyclic        A work array, for the root process, which will gather the
+  !                  cyclic data, and from which x(:) can be recovered
   !  proc            A counter variable for looping over processes.
   !  l               A counter variable used for clarity when performing cyclic
   !                  loops.
   integer :: proc_id, n_proc, err
   integer :: chunksize
-  real , allocatable :: x_proc(:), x_proc_trans(:)
+  real , allocatable :: x_proc(:), x_cyclic(:)
   integer :: proc, l
 
   ! Timing variables.
@@ -88,7 +87,7 @@ program mandelbrot_cyclic
 
   ! Allocate work array for given process.
   allocate(x_proc(0:chunksize-1))
-  allocate(x_proc_trans(0:chunksize-1))
+  allocate(x_cyclic(0:N*N-1))
 
   times(2) = MPI_WTIME()
 
@@ -122,13 +121,21 @@ program mandelbrot_cyclic
 
   times(4) = MPI_WTIME()
 
-  ! MPI alltoall to reorient cyclic data in form suitable for GATHER
-  call MPI_ALLTOALL(x_proc, chunksize, MPI_REAL, x_proc_trans, chunksize, &
-      MPI_REAL, MPI_COMM_WORLD, err)
-
   ! MPI gather the work array from each process to the root process.
-  call MPI_GATHER(x_proc_trans, chunksize, MPI_REAL, x, chunksize, MPI_REAL, &
+  call MPI_GATHER(x_proc, chunksize, MPI_REAL, x_cyclic, chunksize, MPI_REAL, &
       0, MPI_COMM_WORLD, err)
+
+  ! Extract the original data from the cyclically distributed data
+  if (proc_id == 0) then
+
+    do loop = 0, N*N-1
+      proc = mod(loop, n_proc)
+      l = (loop - proc) / n_proc
+
+      x(loop) = x_cyclic((chunksize*proc) + l)
+    end do
+
+  end if
 
   times(5) = MPI_WTIME()
 
