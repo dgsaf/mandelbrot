@@ -9,9 +9,21 @@ N="2000"
 maxiter="1000"
 chunksizes="10 100 1000 10000 100000 1000000"
 
+# compilation
+gfortran src/mandelbrot.f90 -o bin/mandelbrot
+
+mpifort src/mandelbrot_static.f90 -o bin/mandelbrot_static
+
+mpifort src/mandelbrot_master_worker.f90 -o bin/mandelbrot_master_worker
+
+# mandelbrot executions
+cd bin
+
 # mandelbrot basic
+sbatch --export="N=${N},maxiter=${maxiter}" mandelbrot.slurm
 
 # mandelbrot static decomposition
+sbatch --export="N=${N},maxiter=${maxiter}" mandelbrot_static.slurm
 
 # mandelbrot master-worker
 for chunksize in ${chunksizes} ; do
