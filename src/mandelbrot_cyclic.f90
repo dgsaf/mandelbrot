@@ -1,6 +1,6 @@
-!> mandelbrot_static
+!> mandelbrot_cyclic
 !
-!  Adaption of mandelbrot program to use MPI with a static decomposition of the
+!  Adaption of mandelbrot program to use MPI with a cyclic decomposition of the
 !  data.
 !
 !  For a NxN grid (represented in a 1D array; that is, {0, .., N*N - 1}),
@@ -10,20 +10,18 @@
 !  process, is defined to be the smallest integer such that
 !  > chunksize * n_proc >= N*N.
 !  This is so that even in the case where n_proc doesn't divide N*N, every
-!  data point is guaranteed to be covered by a process.
+!  data point is guaranteed to be covered by a process. However, we note that
+!  the remainder of this program has not been adapted to work in cases where
+!  n_proc doesn't divide N*N. May lead to segfault errors in such a case.
 !
-!  Each process, p, is assigned a section of the data
-!  {loop_min(p), .., loop_max(p)} such that
-!  > loop_min(0) = 0
-!  > loop_max(p) = loop_min(p+1) - 1, for p = 0, .., n_proc - 1
-!  > loop_max(n_proc-1) = N*N - 1.
-!  To ensure this, we select
-!  > loop_min(p) = max(0, chunksize * p)
-!  > loop_max(p) = min(N*N-1, chunksize * (p + 1) - 1)
-!  We then define a process indexed chunksize array,
-!  > chunksize_proc(p) = loop_max(p) - loop_min(p) + 1
-!  whence, if n_proc divides N*N, we will have chunksize_proc(p) = chunksize.
-program mandelbrot_static
+!  Each process, p = 0, .., n_proc-1, is assigned a section of the data
+!  {p + (n_proc * k) , k = 0, ..., chunksize-1 }, to perform the mandelbrot
+!  calculation on.
+!
+!  The results of each process are then transposed to recover the
+!  block-sequential, rather than cyclic, data, which is then gathered at the
+!  root.
+program mandelbrot_cyclic
 
   use mpi
 
@@ -41,22 +39,21 @@ program mandelbrot_static
   !                  iterations assigned to each process. Defined to be the
   !                  smallest integer such that
   !                  that chunksize * n_proc >= N*N.
-  !  loop_min        An array of the lower loop-iteration bound for each
-  !                  process.
-  !  loop_max        An array of the upper loop-iteration bound for each
-  !                  process.
-  !  chunksize_proc  An array storing the size of the data subset for each
-  !                  process. If n_proc divides N*N, then each element will
-  !                  simply be equal to chunksize.
+  !                  Note that this program has not been adapted to work for
+  !                  cases where n_proc does not divide N*N.
   !  x_proc          A work array, local to each process, which will yield the
   !                  mandelbrot data for the data subset assigned to this
-  !                  process. Will have size chunksize_proc(proc_id).
+  !                  process. Will have size chunksize.
+  !  x_proc_trans    A work array, local to each process, which will yield the
+  !                  mandelbrot data after transposing the cyclic data. This
+  !                  allows the use of MPI_gather without messy code.
   !  proc            A counter variable for looping over processes.
+  !  l               A counter variable used for clarity when performing cyclic
+  !                  loops.
   integer :: proc_id, n_proc, err
   integer :: chunksize
-  integer , allocatable :: loop_min(:), loop_max(:), chunksize_proc(:)
-  real , allocatable :: x_proc(:)
-  integer :: proc
+  real , allocatable :: x_proc(:), x_proc_trans(:)
+  integer :: proc, l
 
   ! Timing variables.
   !  times       An array storing time markers used to determine the following
@@ -89,26 +86,18 @@ program mandelbrot_static
   ! Determine (default) chunk size.
   chunksize = ceiling(real(N*N) / real(n_proc))
 
-  ! Determine loop bounds and chunk size for each process.
-  allocate(loop_min(0:n_proc-1))
-  allocate(loop_max(0:n_proc-1))
-  allocate(chunksize_proc(0:n_proc-1))
-
-  do proc = 0, n_proc - 1
-    loop_min(proc) = max(0, chunksize * proc)
-    loop_max(proc) = min(N*N-1, chunksize * (proc + 1) - 1)
-    chunksize_proc(proc) = loop_max(proc) - loop_min(proc) + 1
-  end do
-
   ! Allocate work array for given process.
-  allocate(x_proc(0:chunksize_proc(proc_id)-1))
+  allocate(x_proc(0:chunksize-1))
+  allocate(x_proc_trans(0:chunksize-1))
 
   times(2) = MPI_WTIME()
 
   ! Mandelbrot calculation.
   ! Modified to loop only over a certain subset of indexes (due to utilising
-  ! static decomposition).
-  do loop = loop_min(proc_id), loop_max(proc_id)
+  ! cyclic decomposition).
+  do l = 0, chunksize-1
+    loop = (n_proc * l) + proc_id
+
     ! i varies from 0 to N-1
     i = int(loop/N)
 
@@ -123,9 +112,7 @@ program mandelbrot_static
       z = z*z + kappa
     end do
 
-    ! x_proc is indexed to ensure all x_proc(0:chunksize_proc(proc_id)-1) are
-    ! determined.
-    x_proc(loop-loop_min(proc_id)) = log(real(k))/log(real(maxiter))
+    x_proc(l) = log(real(k))/log(real(maxiter))
   end do
 
   times(3) = MPI_WTIME()
@@ -135,9 +122,13 @@ program mandelbrot_static
 
   times(4) = MPI_WTIME()
 
+  ! MPI alltoall to reorient cyclic data in form suitable for GATHER
+  call MPI_ALLTOALL(x_proc, chunksize, MPI_REAL, x_proc_trans, chunksize, &
+      MPI_REAL, MPI_COMM_WORLD, err)
+
   ! MPI gather the work array from each process to the root process.
-  call MPI_GATHERV(x_proc, chunksize_proc(proc_id), MPI_REAL, x, &
-      chunksize_proc, loop_min, MPI_REAL, 0, MPI_COMM_WORLD, err)
+  call MPI_GATHER(x_proc_trans, chunksize, MPI_REAL, x, chunksize, MPI_REAL, &
+      0, MPI_COMM_WORLD, err)
 
   times(5) = MPI_WTIME()
 
@@ -150,7 +141,7 @@ program mandelbrot_static
 
   if (proc_id == 0) then
     write (*, *) &
-        "timing for MPI static code:", NEW_LINE('a'), &
+        "timing for MPI cyclic code:", NEW_LINE('a'), &
         "  total: ", time_total
 
     write (*, *) "time spent working/waiting/communicating:"
@@ -173,9 +164,9 @@ program mandelbrot_static
 !   ! Writing data to file (only done by root process).
 !   if (proc_id == 0) then
 
-!     write (*, *) "Writing mandelbrot_static.ppm"
+!     write (*, *) "Writing mandelbrot_cyclic.ppm"
 
-!     open(7, file="mandelbrot_static.ppm", status="unknown")
+!     open(7, file="mandelbrot_cyclic.ppm", status="unknown")
 
 !     write(7, 100) "P3", N, N, 255
 
@@ -249,7 +240,7 @@ contains
     integer :: file_unit
 
     ! Construct timing filename to be of the form:
-    ! "output/timing.static.N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
+    ! "output/timing.cyclic.N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
     ! .proc_id=<proc_id>.dat"
     write (str_N, *) N
     write (str_maxiter, *) maxiter
@@ -257,7 +248,7 @@ contains
     write (str_proc_id, *) proc_id
 
     write (timing_file, *) &
-        "output/timing.static.", &
+        "output/timing.cyclic.", &
         "N-", trim(adjustl(str_N)), ".", &
         "maxiter-", trim(adjustl(str_maxiter)), ".", &
         "n_proc-", trim(adjustl(str_n_proc)), ".", &
@@ -275,4 +266,4 @@ contains
 
   end subroutine write_timing_data
 
-end program mandelbrot_static
+end program mandelbrot_cyclic
