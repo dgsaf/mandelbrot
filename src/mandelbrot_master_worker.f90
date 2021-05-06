@@ -292,18 +292,8 @@ program mandelbrot_master_worker
     time_total = times(7) - times(1)
   end if
 
-  ! MPI wait for all process to finish.
-  call MPI_BARRIER(MPI_COMM_WORLD, err)
-
-  write (*, *) &
-      "timing for process: ", proc_id, NEW_LINE('a'), &
-      "  setup:         ", time_setup, NEW_LINE('a'), &
-      "  computation:   ", time_comp, NEW_LINE('a'), &
-      "  waiting:       ", time_wait, NEW_LINE('a'), &
-      "  communicating: ", time_comm, NEW_LINE('a'), &
-      "  total:         ", time_total
-
-  call MPI_BARRIER(MPI_COMM_WORLD, err)
+  call write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
+      time_setup, time_comp, time_wait, time_comm, time_total)
 
   ! Writing data to file (only done by master process).
   if (proc_id == master_id) then
@@ -335,6 +325,32 @@ program mandelbrot_master_worker
   close(7)
 
 contains
+
+  ! Mandelbrot calculation.
+  subroutine mandelbrot_calculation (N, maxiter, lower_bound, upper_bound, x)
+    integer , intent(in) :: N, maxiter, lower_bound, upper_bound
+    real , intent(out) :: x(0:upper_bound - lower_bound)
+    complex :: z, kappa
+    integer :: loop, k
+
+    do loop = lower_bound, upper_bound
+      ! i varies from 0 to N-1
+      i = int(loop/N)
+
+      ! j varies from 0 to N-1
+      j = mod(loop, N)
+      kappa = cmplx((4.0*(i-N/2)/N), (4.0*(j-N/2)/N))
+
+      k = 1
+      z = kappa
+      do while (abs(z) <= 2 .and. k < maxiter)
+        k = k+1
+        z = z*z + kappa
+      end do
+
+      x(loop-lower_bound) = log(real(k))/log(real(maxiter))
+    end do
+  end subroutine mandelbrot_calculation
 
   ! Read in the value of N, maxiter, chunksize from command line arguments.
   subroutine read_input (N, maxiter, chunksize)
@@ -376,30 +392,41 @@ contains
 
   end subroutine read_input
 
-  ! Mandelbrot calculation.
-  subroutine mandelbrot_calculation (N, maxiter, lower_bound, upper_bound, x)
-    integer , intent(in) :: N, maxiter, lower_bound, upper_bound
-    real , intent(out) :: x(0:upper_bound - lower_bound)
-    complex :: z, kappa
-    integer :: loop, k
+  subroutine write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
+      time_setup, time_comp, time_wait, time_comm, time_total)
+    integer , intent(in) :: N, maxiter, chunksize, proc_id
+    real , intent(in) :: time_setup, time_comp, time_wait, time_comm, time_total
+    character(len=1000) :: timing_file
+    character(len=20) :: str
+    integer :: file_unit
 
-    do loop = lower_bound, upper_bound
-      ! i varies from 0 to N-1
-      i = int(loop/N)
+    ! Construct timing filename to be of the form:
+    ! "timing-master_worker-N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
+    ! .proc_id=<proc_id>.dat"
+    write (timing_file, *) "timing-master_worker-"
 
-      ! j varies from 0 to N-1
-      j = mod(loop, N)
-      kappa = cmplx((4.0*(i-N/2)/N), (4.0*(j-N/2)/N))
+    read (str, *) N
+    write (timing_file, *) timing_file, "N=", trim(adjustl(str)), "."
 
-      k = 1
-      z = kappa
-      do while (abs(z) <= 2 .and. k < maxiter)
-        k = k+1
-        z = z*z + kappa
-      end do
+    read (str, *) maxiter
+    write (timing_file, *) timing_file, "maxiter=", trim(adjustl(str)), "."
 
-      x(loop-lower_bound) = log(real(k))/log(real(maxiter))
-    end do
-  end subroutine mandelbrot_calculation
+    read (str, *) n_proc
+    write (timing_file, *) timing_file, "n_proc=", trim(adjustl(str)), "."
+
+    read (str, *) proc_id
+    write (timing_file, *) timing_file, "proc_id=", trim(adjustl(str)), ".dat"
+
+    ! Append the chunksize and timing data to the data file
+    file_unit = 10 + proc_id
+
+    open (file_unit, file=timing_file, status="append")
+
+    write (file_unit, *) chunksize, time_setup, time_comp, time_wait, time_comm, &
+        time_total
+
+    close (file_unit)
+
+  end subroutine write_timing_data
 
 end program mandelbrot_master_worker
