@@ -148,13 +148,14 @@ program mandelbrot_static
   time_comm = times(5) - times(4)
   time_total = times(5) - times(1)
 
-  write (*, *) &
-      "timing for process: ", proc_id, NEW_LINE('a'), &
-      "  setup:         ", time_setup, NEW_LINE('a'), &
-      "  computation:   ", time_comp, NEW_LINE('a'), &
-      "  waiting:       ", time_wait, NEW_LINE('a'), &
-      "  communicating: ", time_comm, NEW_LINE('a'), &
-      "  total:         ", time_total
+  write (*, *) proc_id, time_setup, time_comp, time_wait, time_comm, time_total
+  ! write (*, *) &
+  !     "timing for process: ", proc_id, NEW_LINE('a'), &
+  !     "  setup:         ", time_setup, NEW_LINE('a'), &
+  !     "  computation:   ", time_comp, NEW_LINE('a'), &
+  !     "  waiting:       ", time_wait, NEW_LINE('a'), &
+  !     "  communicating: ", time_comm, NEW_LINE('a'), &
+  !     "  total:         ", time_total
 
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 

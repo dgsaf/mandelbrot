@@ -484,8 +484,6 @@ contains
     ! Append the chunksize and timing data to the data file
     file_unit = 10 + proc_id
 
-    write (*, *) timing_file
-
     open (file_unit, file=trim(adjustl(timing_file)), action="write", &
         position="append")
 
