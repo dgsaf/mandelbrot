@@ -92,14 +92,18 @@ provided by Associate Professor Nigel Marks, with the following additions:
 
 \end{itemize}
 
-\newpage
+\clearpage
 \section{Serial}
 \label{sec:serial}
 
 The Mandelbrot serial code, \lstinline[style=ff]{src/mandelbrot.f90}, can be
 found in \autoref{sec:serial-code}.
+Only minor formatting adjustments have been made.
 
-\newpage
+For the case of a $8000 \cross 8000$ grid, the Mandelbrot serial code required
+\SI{148.00}{\second} to terminate.
+
+\clearpage
 \section{Static Decomposition}
 \label{sec:static}
 
@@ -108,12 +112,31 @@ The Mandelbrot MPI static decomposition code,
 \autoref{sec:static-code}.
 
 % compare performance with serial code
+For the case of a $8000 \cross 8000$ grid, the Mandelbrot MPI static
+decomposition code required \SI{61.605}{\second} to terminate, when run with 10
+processes.
+This is to say that it runs approximately 2.4 times faster than the serial code.
 
 % discuss load balance
-
-% load balance graph
+However, it should be noted that while this is a significant improvement, the
+load-balance for this scheme is far from ideal.
 The load-balance for the 10 processes is show in
 \autoref{fig:static-load-balance}.
+It can be seen that more than half the processes spend nearly all their time
+idle, while a handful of other processes spend nearly all their time working.
+This indicates a very uneven load-balance, and that further improvements could
+be made if the over-worked processes were able to share their work with the
+under-worked processes.
+
+It is within reason to expect load-balance problems for Mandelbrot calculations,
+given that each point in the grid will require an indeterminate amount of time
+to calculate.
+Furthermore, large contiguous portions of the grid may quickly terminate while
+other regions require far more work - hence, one process may have a very easy
+region of the grid, while another may have a much more complex region and thus
+require far more time.
+This is to say that this problem is not ideally suited to a static
+decomposition.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -137,7 +160,7 @@ The load-balance for the 10 processes is show in
       , ymin=-10
       , ymax=110
       , ytick={0, 20, ..., 100}
-      , title={Load Balance for Static Decomposition}
+      , title={Load-Balance for Static Decomposition}
       ]
 
       \addplot table[x=process, y=working] from \data;
@@ -146,7 +169,7 @@ The load-balance for the 10 processes is show in
 
     \end{axis}
   \end{tikzpicture}
-  \caption{The load balance for the Mandelbrot MPI static decomposition scheme,
+  \caption{The load-balance for the Mandelbrot MPI static decomposition scheme,
     with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$. For each
     process, the percentage of time spent working is shown in blue, the
     percentage of time spent waiting in red, and the percentage of time spent
@@ -155,7 +178,7 @@ The load-balance for the 10 processes is show in
   \label{fig:static-load-balance}
 \end{figure}
 
-\newpage
+\clearpage
 \section{Master-Worker Scheme}
 \label{sec:master-worker}
 
@@ -164,10 +187,20 @@ The Mandelbrot MPI master-worker scheme code,
 found in \autoref{sec:master-worker-code}.
 
 % compare performance with static
-
-% compare load balance with static (for chunksize = 100000)
+For the case of a $8000 \cross 8000$ grid, and with
+$\mathrm{chunksize} = 100000$, the Mandelbrot MPI master-worker scheme code
+required \SI{18.548}{\second} to terminate, when run with 10 processes.
+This is to say that it runs approximately 3.3 times faster than the MPI static
+decomposition code, and 8.0 times faster than the serial code.
+Furthermore, the load-balance is much more even across the worker processes with
+very little time being spent idling, by any process.
 The load-balance for the 9 worker processes is show in
 \autoref{fig:master-load-balance}.
+The master process is not included in the analysis of the load-balancing, since
+it doesn't actually do any computational work, instead it simply orchestrates
+the work done by the worker processes.
+All the worker processes spend more than 99\% of their time working, which is
+essentially ideal.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -190,7 +223,7 @@ The load-balance for the 9 worker processes is show in
       , ymin=-10
       , ymax=110
       , ytick={0, 20, ..., 100}
-      , title={Load Balance for Master-Worker Scheme}
+      , title={Load-Balance for Master-Worker Scheme}
       ]
 
       \addplot table[x=process, y=working] from \data;
@@ -199,7 +232,7 @@ The load-balance for the 9 worker processes is show in
 
     \end{axis}
   \end{tikzpicture}
-  \caption{The load balance for the Mandelbrot MPI master-worker scheme,
+  \caption{The load-balance for the Mandelbrot MPI master-worker scheme,
     with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$, and
     $\mathrm{chunksize} = 100000$. For each worker process, the percentage of
     time spent working is shown in blue, the percentage of time spent waiting in
@@ -210,10 +243,34 @@ The load-balance for the 9 worker processes is show in
 \end{figure}
 
 % discuss how load balance varies with chunksize
+The time taken for the Mandelbrot MPI master-worker scheme to terminate, for a
+$8000 \cross 8000$ grid (that is, $64 \cross 10^{6}$ data points), for varying
+chunk sizes is shown in \autoref{fig:scaling-chunksize}, when run with 10
+processes (1 master process and 9 worker processes).
+It can be seen that the elapsed time is effectively maximised across a range of
+chunksizes which are neither too small nor too large compared to the total
+number of data points, with elapsed times in the range of
+\SIrange{18}{20}{\second}.
 
-% execution time graph vs chunksize
-The time taken for the Mandelbrot MPI master-worker scheme to terminate for
-varying chunk sizes is shown in \autoref{fig:scaling-chunksize}.
+However, for small chunk sizes, the elapsed time increases sharply (note that
+the code failed to execute, for a chunksize of 1, in under 10 minutes).
+This is to be expected as the amount of coordinating and MPI communication
+overhead per chunk is constant, while the total number of chunks to work on is
+increasing.
+The total time can be estimated as the product of the average time per chunk and
+the number of chunks, whence it is clear that as the chunk size decreasingly
+tends to 1, the average time per chunk will tend to a constant, and so the total
+time will increase.
+
+Furthermore, for large chunk sizes, the elapsed time also increases sharply,
+which is to be expected.
+As the chunk sizes become larger, the likelihood of a worker process being given
+a chunk which requires more time to calculate than an average chunk increases.
+Coupled with the fact that since there are fewer chunks to distribute among the
+worker processes, the likelihood for some workers to be idling while other
+workers finish up difficult chunks increases.
+Hence, the load-balance becomes less ideal and so the efficiency of the
+master-worker scheme decreases.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -273,10 +330,22 @@ The Mandelbrot MPI cyclic decomposition code,
 \autoref{sec:cyclic-code}.
 
 % compare performance with static
+For the case of a $8000 \cross 8000$ grid, the Mandelbrot MPI cyclic
+decomposition code required \SI{17.393}{\second} to terminate, when run with 10
+processes.
+This is to say that it runs approximately 3.5 times faster than the MPI static
+decomposition code, and 8.5 times faster than the serial code.
+This is noticably faster than the MPI static decomposition code, while requiring
+only minor modifications, in contrast with the significant additional complexity
+of the MPI master-worker scheme code.
 
 % discuss load imbalance
-The load-balance for the 10 worker processes is show in
+Furthermore, the load-balance is significantly more ideal than for the MPI
+static decomposition code.
+The load-balance for the 10 processes is show in
 \autoref{fig:cyclic-load-balance}.
+All the processes spend more than 95\% of their time working, which is near
+ideal.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -300,7 +369,7 @@ The load-balance for the 10 worker processes is show in
       , ymin=-10
       , ymax=110
       , ytick={0, 20, ..., 100}
-      , title={Load Balance for Cyclic Decomposition}
+      , title={Load-Balance for Cyclic Decomposition}
       ]
 
       \addplot table[x=process, y=working] from \data;
@@ -309,7 +378,7 @@ The load-balance for the 10 worker processes is show in
 
     \end{axis}
   \end{tikzpicture}
-  \caption{The load balance for the Mandelbrot MPI cyclic decomposition scheme,
+  \caption{The load-balance for the Mandelbrot MPI cyclic decomposition scheme,
     with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$. For each
     worker process, the percentage of time spent working is shown in blue, the
     percentage of time spent waiting in red, and the percentage of time spent
@@ -322,7 +391,24 @@ The load-balance for the 10 worker processes is show in
   \label{fig:cyclic-load-balance}
 \end{figure}
 
-% discuss which is best strategy
+The improvement of the cyclic decomposition over the static decomposition can be
+explained by the nature of the Mandelbrot calculation.
+Large contiguous regions of the grid may be trivially calculated, while other
+regions may require far more iterations to calculate.
+The difficulty of a given grid point, on average for certain regions, may be
+similar to the difficulty of neighbouring grid points.
+Hence, when a static decomposition is done, one process may be assigned a
+trivial region while another is assigned a complex region.
+
+However, under a cyclic decomposition, each process is assigned a number of
+not-necessarily neighbouring grid points - preventing the accumulation of
+trivial points in proximity by a single process.
+Therefore, the average difficulty of each subset is likely to be much more
+uniform than under a static decomposition, and thus the time spent working by
+each process is also likely to be more uniform - leading to a more uniform
+load-balance.
+This is to say that the Mandelbrot calculation is more suited to a cyclic
+decomposition than a static decomposition.
 
 \clearpage
 \appendix

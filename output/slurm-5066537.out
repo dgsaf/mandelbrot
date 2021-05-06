@@ -1,0 +1,16 @@
+
+The following have been reloaded with a version change:
+  1) gcc/4.8.5 => gcc/8.3.0
+
+ timing for MPI master-worker code, chunksize:       10000 
+  total:    18.577123358845711     
+ time spent working/waiting/communicating:
+  1: 99.76 % /  0.00 % /  0.24 %
+  2: 99.76 % /  0.00 % /  0.24 %
+  3: 99.75 % /  0.00 % /  0.25 %
+  5: 99.74 % /  0.00 % /  0.25 %
+  6: 99.76 % /  0.00 % /  0.24 %
+  7: 99.76 % /  0.00 % /  0.24 %
+  8: 99.76 % /  0.00 % /  0.24 %
+  9: 99.75 % /  0.00 % /  0.24 %
+  4: 99.76 % /  0.00 % /  0.24 %

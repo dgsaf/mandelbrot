@@ -1,0 +1,6 @@
+
+The following have been reloaded with a version change:
+  1) gcc/4.8.5 => gcc/8.3.0
+
+ timing for serial code:
+  total:    148.00491700000001     
