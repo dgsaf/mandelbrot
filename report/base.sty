@@ -1,0 +1,89 @@
+% -- base
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{base}[2016/11/09 v1.0 Standard LaTeX package]
+
+
+% -- Packages
+\RequirePackage[l2tabu, orthodox]{nag}
+
+% - Language and Text
+\RequirePackage[english]{babel}
+\RequirePackage[utf8x]{inputenc}
+\RequirePackage{microtype}
+
+% - Latex
+\RequirePackage{xifthen}
+\RequirePackage{etoolbox}
+
+% - Mathematics
+\RequirePackage{amsmath, amssymb, amsfonts, mathtools}
+
+% - Physics
+\RequirePackage{physics}
+\RequirePackage{siunitx}
+\RequirePackage{tensor}
+
+% - Layout
+\RequirePackage{geometry}
+
+% - Figures
+\RequirePackage[font={small, it}]{caption}
+\RequirePackage{subcaption}
+
+% - Graphics
+\RequirePackage{pgfplots, tikz}
+\RequirePackage{graphicx}
+\pgfplotsset{compat = 1.13}
+\usepgfplotslibrary{fillbetween}
+
+% - Title
+\RequirePackage{titling}
+
+% - Tables
+\RequirePackage{booktabs}
+
+% - Header
+\RequirePackage{fancyhdr}
+
+% - Linking
+\RequirePackage{hyperref}
+\hypersetup{
+    linktocpage,
+    colorlinks=true,
+    linkcolor=green,
+    final
+}
+
+% - Tools
+\RequirePackage[marginpar]{todo}
+\RequirePackage{framed}
+
+% - Environments
+\RequirePackage[shortlabels]{enumitem}
+\RequirePackage{verbatim}
+
+% - Bibliography and Referencing
+\bibliographystyle{apalike}
+
+% - Paragraphs
+\setlength{\parindent}{0 pt}
+
+% -- Macros
+
+% - Delimiters
+\DeclarePairedDelimiter{\lr}{(}{)}
+\DeclarePairedDelimiter{\lrsq}{[}{]}
+\DeclarePairedDelimiter{\lrset}{\lbrace}{\rbrace}
+\DeclarePairedDelimiter{\lrang}{\langle}{\rangle}
+\DeclarePairedDelimiter{\lrabs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\lrnorm}{\lVert}{\rVert}
+
+% - Sets
+\renewcommand{\natural}{\mathbb{N}}
+\newcommand{\integer}{\mathbb{Z}}
+\newcommand{\rational}{\mathbb{Q}}
+\renewcommand{\real}{\mathbb{R}}
+\newcommand{\complex}{\mathbb{C}}
+
+\renewcommand{\imath}{\mathrm{i}}
+\renewcommand{\exp}[1]{e^{#1}}
