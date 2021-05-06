@@ -395,7 +395,8 @@ contains
   subroutine write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
     integer , intent(in) :: N, maxiter, chunksize, proc_id
-    real , intent(in) :: time_setup, time_comp, time_wait, time_comm, time_total
+    double precision , intent(in) :: time_setup, time_comp, time_wait, &
+        time_comm, time_total
     character(len=1000) :: timing_file
     character(len=20) :: str
     integer :: file_unit
