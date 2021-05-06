@@ -427,7 +427,7 @@ contains
     if (file_exists) then
       open (file_unit, file=timing_file, access="append")
     else
-      open (file_unit, file=timing_file, access="write")
+      open (file_unit, file=timing_file)
     end if
 
     write (file_unit, *) chunksize, time_setup, time_comp, time_wait, &
