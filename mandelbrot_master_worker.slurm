@@ -5,6 +5,7 @@
 #SBATCH --reservation=courses0100
 #SBATCH --job-name=mandelbrot
 #SBATCH --time=00:10:00
+#SBATCH --nodes=10
 #SBATCH --export=NONE
 
 # load appropriate modules
