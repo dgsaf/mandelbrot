@@ -1,10 +1,36 @@
 !> mandelbrot_master_worker
-!!
-!!  Adaption of mandelbrot program to use MPI with master_worker parallelism.
-!!
-!!  For a NxN grid (represented in a 1D array; that is, {0, .., N*N - 1}),
-!!  with n_proc processes.
-!!
+!
+!  Adaption of Mandelbrot program to use MPI with master_worker parallelism.
+!
+!  For a NxN grid (represented in a 1D array; that is, {0, .., N*N - 1}),
+!  with n_proc processes, and a specified chunksize.
+!
+!  The data is broken up into contiguous subsets, with size chunksize, indexed
+!  by an integer. Each subset defined by
+!  > {loop_min(task), ..., loop_max(task)} for task = 1, ..., n_task.
+!
+!  The master process will distribute integers to the worker processes,
+!  representing which task they are to be working on. The master process will
+!  retain a ledger of which task each worker process is working on. If a worker
+!  process is not working on any task, this will be recorded in the ledger as
+!  task_ledger(proc) = no_task := 0.
+!  Initially, all worker processes are assigned a task to work on. The master
+!  thread will then wait for the workers to return the Mandelbrot data, and if
+!  there are more tasks left to work on, distribute them to the idle workers.
+!  When there are no more tasks left to work on, the master process will then
+!  switch to collecting unfinished tasks, and telling the workers that return
+!  them that there is no more to do. When all outstanding tasks have been
+!  collected, the master thread finishes the master-worker scheme.
+!
+!  The worker processes will first receive a logical flag from the master thread
+!  indicating if there is any work to do. If there is, they will then receive an
+!  integer indicating which task (that is, which subset of the data) they will
+!  work on. After they have performed the Mandelbrot calculation for that subset
+!  of data, they will send the Mandelbrot data back to the master thread and
+!  wait for its response. When the master thread accepts the workers data, it
+!  will tell the worker if there is more work to do, and if there is, send it
+!  another task to perform. When there are no more tasks to work on, the worker
+!  will finish.
 program mandelbrot_master_worker
 
   use mpi
@@ -16,21 +42,43 @@ program mandelbrot_master_worker
   real , allocatable :: x(:)
 
   ! MPI variables.
-  !!  proc_id         ID of current MPI process.
-  !!  n_proc          Number of MPI processes.
-  !!  err             Stores error code for MPI calls.
-  !!  chunksize       The number of loop iterations assigned to a process for
-  !!                  one task.
-  !!  n_tasks         The number of tasks.
-  !!  loop_min        An array of the lower loop-iteration bounds for each
-  !!                  task.
-  !!  loop_max        An array of the upper loop-iteration bounds for each
-  !!                  task.
-  !!  x_proc          A work array, local to each process, which will yield the
-  !!                  mandelbrot data for the data subset assigned to this
-  !!                  process. Will have size chunksize_proc(proc_id).
-  !!  task            A counter variable for looping over tasks.
-  !!  proc            A counter variable for looping over processes.
+  !   master_id
+  !   proc_id         ID of current MPI process.
+  !   n_proc          Number of MPI processes.
+  !   err             Stores error code for MPI calls.
+  !   tag             MPI tag variable.
+  !   request         MPI request variable.
+  !   status          MPI status variable. Used by the master process to
+  !                   determine the proc_id of worker processes returning tasks.
+  !   chunksize       The number of loop iterations assigned to a process for
+  !                   one task.
+  !   n_tasks         The number of tasks.
+  !   loop_min        An array of the lower loop-iteration bounds for each
+  !                   task.
+  !   loop_max        An array of the upper loop-iteration bounds for each
+  !                   task.
+  !   x_task          A work array, local to each process, which will yield the
+  !                   mandelbrot data for the data subset assigned to this
+  !                   worker process. The master thread will use this to copy
+  !                   across the mandelbrot data returned by the worker
+  !                   processes.
+  !   task            A counter variable for looping over tasks.
+  !   proc            A counter variable for looping over processes.
+  !   proc_recv       The proc_id of the worker process returning a task to the
+  !                   master process.
+  !   task_recv       The task completed by the worker process returning a task
+  !                   to the master process.
+  !   task_ledger     A record (kept by the master process) of which task each
+  !                   process is currently working on. If the worker process,
+  !                   proc, isn't working on any task, then
+  !                   task_ledger(proc) = no_task.
+  !   no_task         An integer representing an idle task; that is, no task.
+  !
+  !   all_tasks_distributed   A flag indicating whether or not all the tasks
+  !                   have been distributed amongst the worker process. Once the
+  !                   master thread has determined that all tasks have been
+  !                   distributed, it will send the worker threads this flag as
+  !                   they come to return tasks.
   integer , parameter :: master_id = 0
   integer :: proc_id, n_proc, err, tag, request
   integer :: status(MPI_STATUS_SIZE)
@@ -44,17 +92,24 @@ program mandelbrot_master_worker
   integer , parameter :: no_task = 0
 
   ! Timing variables.
-  !!  times       An array storing time markers used to determine the following
-  !!              timing variables.
-  !!  time_setup  Time taken for this process to setup MPI variables for
-  !!              partitioning data.
-  !!  time_comp   Time taken for this process to perform mandelbrot calculations
-  !!              for its given data subset.
-  !!  time_wait   Time this process spends waiting while other processes finish
-  !               performing their calculations.
-  !!  time_comm   Time taken for this process to communicate its data subset
-  !!              to the root process.
-  !!  time_total  Time taken overall.
+  !   times       An array storing time markers used to determine the following
+  !               timing variables.
+  !   time_setup  Time taken for this process to setup MPI variables for
+  !               partitioning data.
+  !   time_comp   Time taken for a worker process to perform mandelbrot
+  !               calculations for its given data subset. For the master thread,
+  !               this is used to track the time it takes to copy returned data
+  !               into the final data set.
+  !   time_wait   For a worker process, this measures the time spent waiting for
+  !               the master process to receive this workers completed task.
+  !               For the master process, this is not a suitable variable,
+  !               since time spent waiting is hard to differentiate from time
+  !               spent communicating.
+  !   time_comm   For a worker process, this measures the time spent
+  !               communicating with the master thread. For the master thread,
+  !               this measures the all time spent communicating with the
+  !               worker process
+  !   time_total  Time taken overall.
   double precision :: times(1:8)
   double precision :: time_setup, time_comp, time_wait, time_comm, time_total
 
@@ -292,10 +347,11 @@ program mandelbrot_master_worker
     time_total = times(7) - times(1)
   end if
 
+  ! Write timing data to an output file.
   call write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
 
-  ! Writing data to file (only done by master process).
+  ! Writing Mandelbrot data to file (only done by master process).
   if (proc_id == master_id) then
 
     write (*, *) "Writing mandelbrot_master_worker.ppm"
@@ -392,6 +448,15 @@ contains
 
   end subroutine read_input
 
+  ! Write the timing data (for the given parameters: N, maxiter, chunksize,
+  ! n_proc), for a given process.
+  !
+  ! The timing data includes the time taken spent: setting up, communicating,
+  ! performing computations, waiting, and the total time spent.
+  !
+  ! The filename is defined by (N, maxiter, n_proc, proc_id), and the chunksize
+  ! is included in the data output to allow for comparison of timing with
+  ! varying chunksize.
   subroutine write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
     integer , intent(in) :: N, maxiter, chunksize, proc_id
