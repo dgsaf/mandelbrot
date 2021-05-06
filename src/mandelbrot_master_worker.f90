@@ -258,6 +258,8 @@ program mandelbrot_master_worker
       time_comm = time_comm + (times(5) - times(4)) + (times(7) - times(6))
     end do
 
+    deallocate(task_ledger)
+
     times(8) = MPI_WTIME()
 
     time_total = times(8) - times(1)
@@ -359,7 +361,6 @@ program mandelbrot_master_worker
   ! Deallocate
   deallocate(loop_min)
   deallocate(loop_max)
-  deallocate(task_ledger)
   deallocate(x_task)
   deallocate(x)
 
