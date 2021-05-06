@@ -360,8 +360,8 @@ program mandelbrot_master_worker
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
   if (proc_id /= master_id) then
-    write (*, '(a, i3, a, f6.4, a)') &
-        "  process(", proc_id, "): ", real(100.0*time_comp / time_total), "%"
+    write (*, '(a, i1, a, f10.7, a)') &
+        "  ", proc_id, ": ", 100.0*time_comp/time_total), "%"
   end if
 
   ! Write timing data to an output file.
