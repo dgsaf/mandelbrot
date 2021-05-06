@@ -152,6 +152,18 @@ program mandelbrot_static
     write (*, *) &
         "timing for MPI static code:", NEW_LINE('a'), &
         "  total: ", time_total
+
+    write (*, *) "time spent working/waiting/communicating:"
+  end if
+
+  call MPI_BARRIER(MPI_COMM_WORLD, err)
+
+  if (proc_id /= 0) then
+    write (*, '(a, i1, a, f5.2, a, f5.2, a, f5.2, a)') &
+        "  ", proc_id, ": ", &
+        100.0*time_comp/time_total, " % / ", &
+        100.0*time_wait/time_total, " % / ", &
+        100.0*time_comm/time_total, " %"
   end if
 
   ! Write timing data to an output file.

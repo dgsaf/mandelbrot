@@ -362,9 +362,9 @@ program mandelbrot_master_worker
   if (proc_id /= master_id) then
     write (*, '(a, i1, a, f5.2, a, f5.2, a, f5.2, a)') &
         "  ", proc_id, ": ", &
-        100.0*time_comp/time_total, "% / ", &
-        100.0*time_wait/time_total, "% / ", &
-        100.0*time_comm/time_total, "%"
+        100.0*time_comp/time_total, " % / ", &
+        100.0*time_wait/time_total, " % / ", &
+        100.0*time_comm/time_total, " %"
   end if
 
   ! Write timing data to an output file.
