@@ -347,6 +347,13 @@ program mandelbrot_master_worker
     time_total = times(7) - times(1)
   end if
 
+  if (proc_id == master_id) then
+    write (*, *) &
+        "timing for MPI master-worker code, chunksize:", chunksize, &
+        NEW_LINE('a'), &
+        "  total: ", time_total
+  end if
+
   ! Write timing data to an output file.
   call write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)

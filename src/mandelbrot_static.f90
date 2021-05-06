@@ -148,6 +148,12 @@ program mandelbrot_static
   time_comm = times(5) - times(4)
   time_total = times(5) - times(1)
 
+  if (proc_id == 0) then
+    write (*, *) &
+        "timing for MPI static code:", NEW_LINE('a'), &
+        "  total: ", time_total
+  end if
+
   ! Write timing data to an output file.
   call write_timing_data (N, maxiter, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
