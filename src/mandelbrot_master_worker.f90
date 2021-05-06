@@ -410,18 +410,19 @@ contains
     write (str_proc_id, *) proc_id
 
     write (timing_file, *) &
-        "../output/timing-master_worker-", &
-        "N=", trim(adjustl(str_N)), ".", &
-        "maxiter=", trim(adjustl(str_maxiter)), ".", &
-        "n_proc=", trim(adjustl(str_n_proc)), ".", &
-        "proc_id=", trim(adjustl(str_proc_id)), ".dat"
+        "../output/timing.master_worker.", &
+        "N-", trim(adjustl(str_N)), ".", &
+        "maxiter-", trim(adjustl(str_maxiter)), ".", &
+        "n_proc-", trim(adjustl(str_n_proc)), ".", &
+        "proc_id-", trim(adjustl(str_proc_id)), ".dat"
 
     ! Append the chunksize and timing data to the data file
     file_unit = 10 + proc_id
 
     write (*, *) timing_file
 
-    open (file_unit, file=timing_file, action="write", position="append")
+    open (file_unit, file=trim(adjustl(timing_file)), action="write", &
+        position="append")
 
     write (file_unit, *) chunksize, time_setup, time_comp, time_wait, &
         time_comm, time_total
