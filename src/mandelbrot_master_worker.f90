@@ -127,7 +127,8 @@ program mandelbrot_master_worker
 
       if (all_tasks_distributed) then
         !debugging
-        write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : no more tasks"
+        write (*, '(a, i3, a, i10)') &
+            "master -> ", proc_recv, " : no more tasks"
 
         task_ledger(proc) = no_task
       else
@@ -135,7 +136,8 @@ program mandelbrot_master_worker
             request, err)
 
         !debugging
-        write (*, '(a, i3, a, i10)') "master -> ", proc, " : task", task
+        write (*, '(a, i3, a, i10)') &
+            "master -> ", proc, " : task", task
 
         task_ledger(proc) = task
         task = task + 1
@@ -158,13 +160,14 @@ program mandelbrot_master_worker
       call MPI_RECV(x_task, chunksize, MPI_REAL, MPI_ANY_SOURCE, tag, &
           MPI_COMM_WORLD, status, err)
 
-      times(5) = MPI_WTIME()
-
       proc_recv = status(MPI_SOURCE)
       task_recv = task_ledger(proc_recv)
 
       !debugging
-      write (*, '(a, i3, a, i10)') "master <- ", proc_recv, " : task", task_recv
+      write (*, '(a, i3, a, i10)') &
+          "master <- ", proc_recv, " : task", task_recv
+
+      times(5) = MPI_WTIME()
 
       x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
 
@@ -179,7 +182,8 @@ program mandelbrot_master_worker
           request, err)
 
       !debugging
-      write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : task", task
+      write (*, '(a, i3, a, i10)') &
+          "master -> ", proc_recv, " : task", task
 
       task_ledger(proc_recv) = task
       task = task + 1
@@ -191,9 +195,8 @@ program mandelbrot_master_worker
 
       times(7) = MPI_WTIME()
 
-      time_wait = time_wait + times(5) - times(4)
       time_comp = time_comp + times(6) - times(5)
-      time_comm = time_comm + times(7) - times(6)
+      time_comm = time_comm + (times(5) - times(4)) + (times(7) - times(6))
     end do
 
     ! Collect outstanding tasks.
@@ -204,13 +207,14 @@ program mandelbrot_master_worker
       call MPI_RECV(x_task, chunksize, MPI_REAL, MPI_ANY_SOURCE, tag, &
           MPI_COMM_WORLD, status, err)
 
-      times(5) = MPI_WTIME()
-
       proc_recv = status(MPI_SOURCE)
       task_recv = task_ledger(proc_recv)
 
       !debugging
-      write (*, '(a, i3, a, i10)') "master <- ", proc_recv, " : task", task_recv
+      write (*, '(a, i3, a, i10)') &
+          "master <- ", proc_recv, " : task", task_recv
+
+      times(5) = MPI_WTIME()
 
       x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
 
@@ -221,7 +225,8 @@ program mandelbrot_master_worker
           MPI_COMM_WORLD, request, err)
 
       !debugging
-      write (*, '(a, i3, a, i10)') "master -> ", proc_recv, " : no more tasks"
+      write (*, '(a, i3, a, i10)') &
+          "master -> ", proc_recv, " : no more tasks"
 
       ! No more work to distribute.
       task_ledger(proc_recv) = no_task
@@ -231,16 +236,15 @@ program mandelbrot_master_worker
 
       times(7) = MPI_WTIME()
 
-      time_wait = time_wait + times(5) - times(4)
       time_comp = time_comp + times(6) - times(5)
-      time_comm = time_comm + times(7) - times(6)
+      time_comm = time_comm + (times(5) - times(4)) + (times(7) - times(6))
     end do
 
     ! Dismiss worker processes.
 
-    times(7) = MPI_WTIME()
+    times(8) = MPI_WTIME()
 
-    time_total = times(7) - times(1)
+    time_total = times(8) - times(1)
   else
     ! Worker process.
 
@@ -253,7 +257,6 @@ program mandelbrot_master_worker
 
     ! Work until no more tasks to be distributed.
     do while (.not. all_tasks_distributed)
-
       times(3) = MPI_WTIME()
 
       ! Collect task to complete.
