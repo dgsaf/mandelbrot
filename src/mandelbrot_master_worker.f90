@@ -421,12 +421,14 @@ contains
     ! Append the chunksize and timing data to the data file
     file_unit = 10 + proc_id
 
-    open (file_unit, file=timing_file, access="append")
+    write (*, *) timing_file
 
-    write (file_unit, *) chunksize, time_setup, time_comp, time_wait, time_comm, &
-        time_total
+    ! open (file_unit, file=timing_file, access="append")
 
-    close (file_unit)
+    ! write (file_unit, *) chunksize, time_setup, time_comp, time_wait, time_comm, &
+    !     time_total
+
+    ! close (file_unit)
 
   end subroutine write_timing_data
 
