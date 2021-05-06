@@ -7,7 +7,7 @@ module load openmpi/2.1.2
 # parameters
 N="2000"
 maxiter="1000"
-chunksizes="1 10 100 1000 10000 100000 1000000"
+chunksizes="1 3 10 32 100 316 1000 3162 10000 31623 100000 316228 1000000"
 
 # compilation
 gfortran src/mandelbrot.f90 -o bin/mandelbrot
@@ -16,8 +16,10 @@ mpifort src/mandelbrot_static.f90 -o bin/mandelbrot_static
 
 mpifort src/mandelbrot_master_worker.f90 -o bin/mandelbrot_master_worker
 
+mpifort src/mandelbrot_cyclic.f90 -o bin/mandelbrot_cyclic
+
 # mandelbrot basic
-# srun -n 1 bin/mandelbrot ${N} ${maxiter}
+srun -n 1 bin/mandelbrot ${N} ${maxiter}
 echo
 
 # mandelbrot static decomposition
@@ -31,3 +33,5 @@ for chunksize in ${chunksizes} ; do
 done
 
 # mandelbrot cyclic decomposition
+srun -n 10 bin/mandelbrot_cyclic ${N} ${maxiter}
+echo
