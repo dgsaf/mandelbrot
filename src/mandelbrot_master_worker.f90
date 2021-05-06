@@ -347,11 +347,21 @@ program mandelbrot_master_worker
     time_total = times(7) - times(1)
   end if
 
+  ! Timing analysis.
   if (proc_id == master_id) then
     write (*, *) &
         "timing for MPI master-worker code, chunksize:", chunksize, &
         NEW_LINE('a'), &
         "  total: ", time_total
+
+    write (*, *) "time spent working:"
+  end if
+
+  call MPI_BARRIER(MPI_COMM_WORLD, err)
+
+  if (proc_id /= master_id) then
+    write (*, '(a, i3, a, f6.4, a)') &
+        "  process(", proc_id, "): ", real(100.0*time_comp / time_total), "%"
   end if
 
   ! Write timing data to an output file.
