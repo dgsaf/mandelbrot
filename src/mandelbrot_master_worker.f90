@@ -467,7 +467,7 @@ contains
     integer :: file_unit
 
     ! Construct timing filename to be of the form:
-    ! "../output/timing-master_worker-N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
+    ! "output/timing-master_worker-N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
     ! .proc_id=<proc_id>.dat"
     write (str_N, *) N
     write (str_maxiter, *) maxiter
@@ -475,7 +475,7 @@ contains
     write (str_proc_id, *) proc_id
 
     write (timing_file, *) &
-        "../output/timing.master_worker.", &
+        "output/timing.master_worker.", &
         "N-", trim(adjustl(str_N)), ".", &
         "maxiter-", trim(adjustl(str_maxiter)), ".", &
         "n_proc-", trim(adjustl(str_n_proc)), ".", &
