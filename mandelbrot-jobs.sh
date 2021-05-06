@@ -7,7 +7,7 @@ module load openmpi/2.1.2
 # parameters
 N="2000"
 maxiter="1000"
-chunksizes="10 100 1000 10000 100000 1000000"
+chunksizes="1 10 100 1000 10000 100000 1000000"
 
 # compilation
 gfortran src/mandelbrot.f90 -o bin/mandelbrot

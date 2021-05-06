@@ -221,4 +221,47 @@ contains
 
   end subroutine read_input
 
+  ! Write the timing data (for the given parameters: N, maxiter, chunksize,
+  ! n_proc), for a given process.
+  !
+  ! The timing data includes the time taken spent: setting up, communicating,
+  ! performing computations, waiting, and the total time spent.
+  !
+  ! The filename is defined by (N, maxiter, n_proc, proc_id)
+  subroutine write_timing_data (N, maxiter, n_proc, proc_id, &
+      time_setup, time_comp, time_wait, time_comm, time_total)
+    integer , intent(in) :: N, maxiter, proc_id
+    double precision , intent(in) :: time_setup, time_comp, time_wait, &
+        time_comm, time_total
+    character(len=1000) :: timing_file
+    character(len=20) :: str_N, str_maxiter, str_n_proc, str_proc_id
+    integer :: file_unit
+
+    ! Construct timing filename to be of the form:
+    ! "output/timing.static.N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
+    ! .proc_id=<proc_id>.dat"
+    write (str_N, *) N
+    write (str_maxiter, *) maxiter
+    write (str_n_proc, *) n_proc
+    write (str_proc_id, *) proc_id
+
+    write (timing_file, *) &
+        "output/timing.static.", &
+        "N-", trim(adjustl(str_N)), ".", &
+        "maxiter-", trim(adjustl(str_maxiter)), ".", &
+        "n_proc-", trim(adjustl(str_n_proc)), ".", &
+        "proc_id-", trim(adjustl(str_proc_id)), ".dat"
+
+    ! Append the timing data to the data file
+    file_unit = 10 + proc_id
+
+    open (file_unit, file=trim(adjustl(timing_file)), action="write")
+
+    write (file_unit, *) time_setup, time_comp, time_wait, &
+        time_comm, time_total
+
+    close (file_unit)
+
+  end subroutine write_timing_data
+
 end program mandelbrot_static
