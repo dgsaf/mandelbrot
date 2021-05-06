@@ -351,34 +351,34 @@ program mandelbrot_master_worker
   call write_timing_data (N, maxiter, chunksize, n_proc, proc_id, &
       time_setup, time_comp, time_wait, time_comm, time_total)
 
-  ! Writing Mandelbrot data to file (only done by master process).
-  if (proc_id == master_id) then
+!   ! Writing Mandelbrot data to file (only done by master process).
+!   if (proc_id == master_id) then
 
-    write (*, *) "Writing mandelbrot_master_worker.ppm"
+!     write (*, *) "Writing mandelbrot_master_worker.ppm"
 
-    open(7, file="mandelbrot_master_worker.ppm", status="unknown")
+!     open(7, file="mandelbrot_master_worker.ppm", status="unknown")
 
-    write(7, 100) "P3", N, N, 255
+!     write(7, 100) "P3", N, N, 255
 
-    do loop = 0, N*N-1
-      if (x(loop) < 0.5) then
-        green = 2.0*x(loop)*255
-        write(7, 110) 255-green, green, 0
-      else
-        blue = 2.0*x(loop)*255 - 255
-        write(7, 110) 0, 255-blue, blue
-      end if
-    end do
+!     do loop = 0, N*N-1
+!       if (x(loop) < 0.5) then
+!         green = 2.0*x(loop)*255
+!         write(7, 110) 255-green, green, 0
+!       else
+!         blue = 2.0*x(loop)*255 - 255
+!         write(7, 110) 0, 255-blue, blue
+!       end if
+!     end do
 
-100 format(A2, /, I4, I5, /, I3)
-110 format(I3, /, I3, /, I3)
+! 100 format(A2, /, I4, I5, /, I3)
+! 110 format(I3, /, I3, /, I3)
 
-  end if
+!   end if
 
-  ! MPI finalisation.
-  call MPI_FINALIZE(err)
+!   ! MPI finalisation.
+!   call MPI_FINALIZE(err)
 
-  close(7)
+!   close(7)
 
 contains
 
