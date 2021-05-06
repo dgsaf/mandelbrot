@@ -421,12 +421,12 @@ contains
 
     write (*, *) timing_file
 
-    ! open (file_unit, file=timing_file, access="append")
+    open (file_unit, file=timing_file, access="append")
 
-    ! write (file_unit, *) chunksize, time_setup, time_comp, time_wait, time_comm, &
-    !     time_total
+    write (file_unit, *) chunksize, time_setup, time_comp, time_wait, &
+        time_comm, time_total
 
-    ! close (file_unit)
+    close (file_unit)
 
   end subroutine write_timing_data
 
