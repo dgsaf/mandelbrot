@@ -120,7 +120,7 @@ This is to say that it runs approximately 2.4 times faster than the serial code.
 % discuss load balance
 However, it should be noted that while this is a significant improvement, the
 load-balance for this scheme is far from ideal.
-The load-balance for the 10 processes is show in
+The load-balance for the 10 processes is shown in
 \autoref{fig:static-load-balance}.
 It can be seen that more than half the processes spend nearly all their time
 idle, while a handful of other processes spend nearly all their time working.
@@ -194,8 +194,8 @@ This is to say that it runs approximately 3.3 times faster than the MPI static
 decomposition code, and 8.0 times faster than the serial code.
 Furthermore, the load-balance is much more even across the worker processes with
 very little time being spent idling, by any process.
-The load-balance for the 9 worker processes is show in
-\autoref{fig:master-load-balance}.
+The load-balance for the 9 worker processes is shown in
+\autoref{fig:master-load-balance-100000}.
 The master process is not included in the analysis of the load-balancing, since
 it doesn't actually do any computational work, instead it simply orchestrates
 the work done by the worker processes.
@@ -239,7 +239,7 @@ essentially ideal.
     red, and the percentage of time spent communicating is shown in brown;
     however, the time spent waiting and communicating is negligble and so both
     are barely visible.}
-  \label{fig:master-load-balance}
+  \label{fig:master-load-balance-100000}
 \end{figure}
 
 % discuss how load balance varies with chunksize
@@ -252,25 +252,6 @@ chunksizes which are neither too small nor too large compared to the total
 number of data points, with elapsed times in the range of
 \SIrange{18}{20}{\second}.
 
-However, for small chunk sizes, the elapsed time increases sharply (note that
-the code failed to execute, for a chunksize of 1, in under 10 minutes).
-This is to be expected as the amount of coordinating and MPI communication
-overhead per chunk is constant, while the total number of chunks to work on is
-increasing.
-The total time can be estimated as the product of the average time per chunk and
-the number of chunks, whence it is clear that as the chunk size decreasingly
-tends to 1, the average time per chunk will tend to a constant, and so the total
-time will increase.
-
-Furthermore, for large chunk sizes, the elapsed time also increases sharply,
-which is to be expected.
-As the chunk sizes become larger, the likelihood of a worker process being given
-a chunk which requires more time to calculate than an average chunk increases.
-Coupled with the fact that since there are fewer chunks to distribute among the
-worker processes, the likelihood for some workers to be idling while other
-workers finish up difficult chunks increases.
-Hence, the load-balance becomes less ideal and so the efficiency of the
-master-worker scheme decreases.
 \begin{figure}[h]
   \centering
   \begin{tikzpicture}
@@ -321,6 +302,115 @@ master-worker scheme decreases.
   \label{fig:scaling-chunksize}
 \end{figure}
 
+However, for small chunk sizes, the elapsed time increases sharply (note that
+the code failed to execute, for a chunksize of 1, in under 10 minutes).
+This is to be expected as the amount of coordinating and MPI communication
+overhead per chunk is constant, while the total number of chunks to work on is
+increasing.
+The total time can be estimated as the product of the average time per chunk and
+the number of chunks, whence it is clear that as the chunk size decreasingly
+tends to 1, the average time per chunk will tend to a constant, and so the total
+time will increase
+The load-balance for the 9 worker processes, for a chunksize of 10, is shown in
+\autoref{fig:master-load-balance-10}.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pgfplotstableread[col sep=comma, header=true]{
+      process, working, waiting, communicating
+      1, 68.99, 0.61, 30.18
+      2, 69.00, 0.61, 30.18
+      3, 69.02, 0.67, 30.09
+      4, 68.95, 0.68, 30.14
+      5, 69.01, 0.65, 30.12
+      6, 69.02, 0.61, 30.15
+      7, 68.98, 0.61, 30.15
+      8, 69.02, 0.62, 30.14
+      9, 68.99, 0.62, 30.17
+    }\data
+
+    \begin{axis}[
+      ybar stacked
+      , xtick={0, 1, ..., 9}
+      , ymin=-10
+      , ymax=110
+      , ytick={0, 20, ..., 100}
+      , title={Load-Balance for Master-Worker Scheme}
+      ]
+
+      \addplot table[x=process, y=working] from \data;
+      \addplot table[x=process, y=waiting] from \data;
+      \addplot table[x=process, y=communicating] from \data;
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The load-balance for the Mandelbrot MPI master-worker scheme,
+    with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$, and
+    $\mathrm{chunksize} = 10$. For each worker process, the percentage of
+    time spent working is shown in blue, the percentage of time spent waiting in
+    red, and the percentage of time spent communicating is shown in brown;
+    however, the time spent waiting is negligble and so is barely visible.}
+  \label{fig:master-load-balance-10}
+\end{figure}
+
+Furthermore, for large chunk sizes, the elapsed time also increases sharply,
+which is to be expected.
+As the chunk sizes become larger, the likelihood of a worker process being given
+a chunk which requires more time to calculate than an average chunk increases.
+Coupled with the fact that since there are fewer chunks to distribute among the
+worker processes, the likelihood for some workers to be idling while other
+workers finish up difficult chunks increases.
+Hence, the load-balance becomes less ideal and so the efficiency of the
+master-worker scheme decreases.
+At extremely large chunk sizes, some processes may not even be assigned any
+chunks to work on, which is obviously inefficient when it comes to
+load-balancing.
+The load-balance for the 9 worker processes, for a chunksize of 10000000, is
+shown in \autoref{fig:master-load-balance-10000000}.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pgfplotstableread[col sep=comma, header=true]{
+      process, working, waiting, communicating
+      1, 95.54, 0.00, 4.45
+      2, 99.81, 0.00, 0.19
+      3, 99.94, 0.00, 0.06
+      4, 99.93, 0.00, 0.07
+      5, 94.72, 0.00, 5.27
+      6, 93.26, 0.00, 6.73
+      7, 88.58, 0.00, 11.41
+      8,  0.00, 0.00, 0.00
+      9,  0.00, 0.00, 0.00
+    }\data
+
+    \begin{axis}[
+      ybar stacked
+      , xtick={0, 1, ..., 9}
+      , ymin=-10
+      , ymax=110
+      , ytick={0, 20, ..., 100}
+      , title={Load-Balance for Master-Worker Scheme}
+      ]
+
+      \addplot table[x=process, y=working] from \data;
+      \addplot table[x=process, y=waiting] from \data;
+      \addplot table[x=process, y=communicating] from \data;
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The load-balance for the Mandelbrot MPI master-worker scheme,
+    with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$, and
+    $\mathrm{chunksize} = 10000000$. For each worker process, the percentage of
+    time spent working is shown in blue, the percentage of time spent waiting in
+    red, and the percentage of time spent communicating is shown in brown;
+    however, the time spent waiting is negligble and so is barely visible.
+    Note also that processes 8 and 9 are not present, this is due to them not
+    being assigned any chunks at all, and thus terminated immediately.}
+  \label{fig:master-load-balance-10000000}
+\end{figure}
+
 \clearpage
 \section{Cyclic Decomposition}
 \label{sec:cyclic}
@@ -342,7 +432,7 @@ of the MPI master-worker scheme code.
 % discuss load imbalance
 Furthermore, the load-balance is significantly more ideal than for the MPI
 static decomposition code.
-The load-balance for the 10 processes is show in
+The load-balance for the 10 processes is shown in
 \autoref{fig:cyclic-load-balance}.
 All the processes spend more than 95\% of their time working, which is near
 ideal.
