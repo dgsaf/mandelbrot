@@ -85,7 +85,7 @@ program mandelbrot_master_worker
   integer :: chunksize, n_tasks
   integer , allocatable :: loop_min(:), loop_max(:)
   real , allocatable :: x_task(:)
-  integer :: proc, task
+  integer :: proc, task, loop
   integer :: proc_recv, task_recv
   logical :: all_tasks_distributed
   integer , allocatable :: task_ledger(:)
@@ -145,7 +145,6 @@ program mandelbrot_master_worker
   do task = 1, n_tasks
     loop_min(task) = max(0, chunksize * (task - 1))
     loop_max(task) = min(N*N-1, chunksize * task - 1)
-
   end do
 
   ! Default value for flag indicating all tasks have been handed out
@@ -205,7 +204,9 @@ program mandelbrot_master_worker
 
       times(5) = MPI_WTIME()
 
-      x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
+      do loop = loop_min(task_recv), loop_max(task_recv)
+        x(loop) = x_task(loop - loop_min(task_recv))
+      end do
 
       times(6) = MPI_WTIME()
 
@@ -241,7 +242,9 @@ program mandelbrot_master_worker
 
       times(5) = MPI_WTIME()
 
-      x(loop_min(task_recv):loop_max(task_recv)) = x_task(:)
+      do loop = loop_min(task_recv), loop_max(task_recv)
+        x(loop) = x_task(loop - loop_min(task_recv))
+      end do
 
       times(6) = MPI_WTIME()
 
