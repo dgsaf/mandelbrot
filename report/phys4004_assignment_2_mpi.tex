@@ -134,6 +134,9 @@ The load-balance for the 10 processes is show in
     \begin{axis}[
       ybar stacked
       , xtick={0, 1, ..., 9}
+      , ymin=-10
+      , ymax=110
+      , ytick={0, 20, ..., 100}
       , title={Load Balance for Static Decomposition}
       ]
 
@@ -163,12 +166,105 @@ found in \autoref{sec:master-worker-code}.
 % compare performance with static
 
 % compare load balance with static (for chunksize = 100000)
+The load-balance for the 9 worker processes is show in
+\autoref{fig:master-load-balance}.
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pgfplotstableread[col sep=comma, header=true]{
+      process, working, waiting, communicating
+      1, 99.80, 0.00, 0.20
+      2, 99.83, 0.00, 0.17
+      3, 99.81, 0.00, 0.19
+      4, 99.80, 0.00, 0.20
+      5, 99.80, 0.00, 0.20
+      6, 99.80, 0.00, 0.20
+      7, 99.78, 0.00, 0.22
+      8, 99.82, 0.00, 0.18
+      9, 99.79, 0.00, 0.21
+    }\data
+
+    \begin{axis}[
+      ybar stacked
+      , xtick={0, 1, ..., 9}
+      , ymin=-10
+      , ymax=110
+      , ytick={0, 20, ..., 100}
+      , title={Load Balance for Master-Worker Scheme}
+      ]
+
+      \addplot table[x=process, y=working] from \data;
+      \addplot table[x=process, y=waiting] from \data;
+      \addplot table[x=process, y=communicating] from \data;
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The load balance for the Mandelbrot MPI master-worker scheme,
+    with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$, and
+    $\mathrm{chunksize} = 100000$. For each worker process, the percentage of
+    time spent working is shown in blue, the percentage of time spent waiting in
+    red, and the percentage of time spent communicating is shown in brown;
+    however, the time spent waiting and communicating is negligble and so both
+    are barely visible.}
+  \label{fig:master-load-balance}
+\end{figure}
 
 % discuss how load balance varies with chunksize
 
 % execution time graph vs chunksize
+The time taken for the Mandelbrot MPI master-worker scheme to terminate for
+varying chunk sizes is shown in \autoref{fig:scaling-chunksize}.
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pgfplotstableread[col sep=comma, header=true]{
+      chunksize, elapsedtime
+      3, 45.985
+      10, 26.966
+      32, 20.422
+      100, 19.087
+      316, 18.700
+      1000, 18.512
+      3162, 18.560
+      10000, 18.577
+      31623, 18.492
+      100000, 18.548
+      316228, 18.569
+      1000000, 19.368
+      3162278, 34.179
+      10000000, 74.364
+      31622777, 117.62
+    }\data
 
-\newpage
+    \begin{axis}[
+      use units
+      , title = {Master-Worker Scheme Total Execution Time}
+      , grid = major
+      , xmode = log
+      , log basis x = {10}
+      , xlabel = {Chunk size}
+      , ylabel = {Elapsed Time}
+      , y unit = {s}
+      , xmin = 1
+      , xmax = 100000000
+      ]
+
+      \addplot [
+      color = black
+      , mark = diamond*
+      ] table [x=chunksize, y=elapsedtime] \data;
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The total execution time for the Mandelbrot MPI master-worker scheme,
+  with 10 processes, where $N=8000$, $\mathrm{maxiter}=1000$, for a range of
+  chunk sizes, $\mathrm{chunksize} = 10^{k/2}$ for $k = 1, \dotsc, 15$. The MPI
+  master-worker scheme, for a chunk size of $1$, failed to terminate within
+  10 minutes and so was disregarded.}
+  \label{fig:scaling-chunksize}
+\end{figure}
+
+\clearpage
 \section{Cyclic Decomposition}
 \label{sec:cyclic}
 
@@ -179,6 +275,52 @@ The Mandelbrot MPI cyclic decomposition code,
 % compare performance with static
 
 % discuss load imbalance
+The load-balance for the 10 worker processes is show in
+\autoref{fig:cyclic-load-balance}.
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \pgfplotstableread[col sep=comma, header=true]{
+      process, working, waiting, communicating
+      0, 95.76, 0.18, 4.06
+      1, 97.86, 2.06, 0.08
+      2, 99.86, 0.08, 0.13
+      3, 97.74, 2.06, 0.20
+      4, 99.67, 0.07, 0.26
+      5, 97.61, 2.06, 0.33
+      6, 99.55, 0.07, 0.38
+      7, 97.49, 2.05, 0.46
+      8, 99.41, 0.07, 0.51
+      9, 99.30, 0.08, 0.62
+    }\data
+
+    \begin{axis}[
+      ybar stacked
+      , xtick={0, 1, ..., 9}
+      , ymin=-10
+      , ymax=110
+      , ytick={0, 20, ..., 100}
+      , title={Load Balance for Cyclic Decomposition}
+      ]
+
+      \addplot table[x=process, y=working] from \data;
+      \addplot table[x=process, y=waiting] from \data;
+      \addplot table[x=process, y=communicating] from \data;
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The load balance for the Mandelbrot MPI cyclic decomposition scheme,
+    with 10 processes, where $N = 8000$, $\mathrm{maxiter} = 1000$. For each
+    worker process, the percentage of time spent working is shown in blue, the
+    percentage of time spent waiting in red, and the percentage of time spent
+    communicating is shown in brown. It can be seen that the only process with
+    non-negligble communication time is the root thread. This is due to the time
+    spent re-ordering the cyclic data gathered at the root thread into the
+    original sequential order being included in the time spent communicating for
+    the root process. This was chosen since while cyclic decomposition may have
+    benefits, untangling the returned data is a significant consideration.}
+  \label{fig:cyclic-load-balance}
+\end{figure}
 
 % discuss which is best strategy
 
@@ -187,7 +329,6 @@ The Mandelbrot MPI cyclic decomposition code,
 \section{Appendix}
 \label{sec:appendix}
 
-\newpage
 \subsection{Serial}
 \label{sec:serial-code}
 
