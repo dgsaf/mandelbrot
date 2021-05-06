@@ -5,7 +5,7 @@ module load gcc/8.3.0
 module load openmpi/2.1.2
 
 # parameters
-N="2000"
+N="8000"
 maxiter="1000"
 chunksizes="1 3 10 32 100 316 1000 3162 10000 31623 100000 316228 1000000"
 
