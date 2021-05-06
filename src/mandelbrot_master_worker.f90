@@ -398,25 +398,23 @@ contains
     double precision , intent(in) :: time_setup, time_comp, time_wait, &
         time_comm, time_total
     character(len=1000) :: timing_file
-    character(len=20) :: str
+    character(len=20) :: str_N, str_maxiter, str_n_proc, str_proc_id
     integer :: file_unit
 
     ! Construct timing filename to be of the form:
     ! "../output/timing-master_worker-N=<N>.maxiter=<maxiter>.n_proc=<n_proc>\
     ! .proc_id=<proc_id>.dat"
-    write (timing_file, *) "../output/timing-master_worker-"
+    write (str_N, *) N
+    write (str_maxiter, *) maxiter
+    write (str_n_proc, *) n_proc
+    write (str_proc_id, *) proc_id
 
-    write (str, *) N
-    write (timing_file, *) timing_file, "N=", trim(adjustl(str)), "."
-
-    write (str, *) maxiter
-    write (timing_file, *) timing_file, "maxiter=", trim(adjustl(str)), "."
-
-    write (str, *) n_proc
-    write (timing_file, *) timing_file, "n_proc=", trim(adjustl(str)), "."
-
-    write (str, *) proc_id
-    write (timing_file, *) timing_file, "proc_id=", trim(adjustl(str)), ".dat"
+    write (timing_file, *) &
+        "../output/timing-master_worker-", &
+        "N=", trim(adjustl(str_N)), ".", &
+        "maxiter=", trim(adjustl(str_maxiter)), ".", &
+        "n_proc=", trim(adjustl(str_n_proc)), ".", &
+        "proc_id=", trim(adjustl(str_proc_id)), ".dat"
 
     ! Append the chunksize and timing data to the data file
     file_unit = 10 + proc_id
