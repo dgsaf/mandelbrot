@@ -354,14 +354,17 @@ program mandelbrot_master_worker
         NEW_LINE('a'), &
         "  total: ", time_total
 
-    write (*, *) "time spent working:"
+    write (*, *) "time spent working/waiting/communicating:"
   end if
 
   call MPI_BARRIER(MPI_COMM_WORLD, err)
 
   if (proc_id /= master_id) then
-    write (*, '(a, i1, a, f10.7, a)') &
-        "  ", proc_id, ": ", 100.0*time_comp/time_total), "%"
+    write (*, '(a, i1, a, f5.2, a, f5.2, a, f5.2, a)') &
+        "  ", proc_id, ": ", &
+        100.0*time_comp/time_total, "% / ", &
+        100.0*time_wait/time_total, "% / ", &
+        100.0*time_comm/time_total, "%"
   end if
 
   ! Write timing data to an output file.
