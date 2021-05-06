@@ -12,4 +12,4 @@ module load gcc/8.3.0
 module load openmpi/2.1.2
 
 # program execution
-srun -n 10 mandelbrot_static ${N} ${maxiter}
+srun -n 10 bin/mandelbrot_static ${N} ${maxiter}

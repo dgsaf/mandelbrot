@@ -16,9 +16,6 @@ mpifort src/mandelbrot_static.f90 -o bin/mandelbrot_static
 
 mpifort src/mandelbrot_master_worker.f90 -o bin/mandelbrot_master_worker
 
-# mandelbrot executions
-cd bin
-
 # mandelbrot basic
 sbatch --export="N=${N},maxiter=${maxiter}" mandelbrot.slurm
 
